@@ -165,9 +165,21 @@ switch task
                 stcmd = ''; % To avoid jumps between end of 10s buffer, as warned in manual
             end
             
+            % Do movecomp?
+            if strcmp(aap.tasklist.currenttask.settings.sss.mvcomp, 'on') || isempty(aap.tasklist.currenttask.settings.sss.mvcomp)
+                mvcmd = ' -movecomp inter'; % areguments added to the maxfilter unix command
+                mvcomp_out = char(fullfile(sesspath,[fstem '_headpoints.txt']),...
+                    fullfile(sesspath,[fstem '_headposition.pos'])); % used later when checking md5 checksums
+            elseif strcmp(aap.tasklist.currenttask.settings.sss.mvcomp, 'off')
+                mvcmd = '';
+                mvcomp_out = char(fullfile(sesspath,[fstem '_headpoints.txt'])); % used later when checking md5 checksums (no headpos in this case)
+            else
+                aas_log(aap,true,sprintf('ERROR: invalid option for sss.movecomp valid inputs = on|off'));
+            end
+            
             % HPI estimation and movement compensation
             if ~isEmptyRoom
-                hpicmd = sprintf(' -linefreq 50 -hpistep %d -hpisubt %s -hpicons -movecomp inter -hp %s',...
+                hpicmd = sprintf(' -linefreq 50 -hpistep %d -hpisubt %s -hpicons -hp %s',...
                     aas_getsetting(aap,'hpi.step',sess),...
                     aas_getsetting(aap,'hpi.subt',sess),...
                     fullfile(sesspath,[fstem '_headposition.pos']));
@@ -201,7 +213,7 @@ switch task
                 mfcall ' -f ' infname ' -o ' outfname,...
                 ' -ctc ' fnamectc,...
                 ' -cal ' fnamecal,...
-                 ' ', skipstr, badstr, orgcmd, stcmd, hpicmd, trcmd_par ' -force -v | tee ' logfname
+                 ' ', skipstr, badstr, orgcmd, stcmd, hpicmd, mvcmd, trcmd_par ' -force -v | tee ' logfname
                 ];
             aas_log(aap,false,mfcmd_rest);
             
@@ -293,11 +305,9 @@ switch task
             
             %% Outputs
             aap=aas_desc_outputs(aap,subj,sess,instream,outs{1});
-            
+                        
             if ~isEmptyRoom
-                aap=aas_desc_outputs(aap,subj,sess,[instream '_head'],...
-                    char(fullfile(sesspath,[fstem '_headpoints.txt']),...
-                    fullfile(sesspath,[fstem '_headposition.pos'])));
+                aap=aas_desc_outputs(aap,subj,sess,[instream '_head'],mvcomp_out);
             end
             
             if ~isempty(spherefit) && ~isempty(aap.tasklist.currenttask.settings.transform)
