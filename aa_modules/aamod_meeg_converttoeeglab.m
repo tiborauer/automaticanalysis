@@ -48,9 +48,63 @@ switch task
             if sRate ~= EEG.srate, EEG = pop_resample( EEG, aas_getsetting(aap,'downsample')); end
         end
         
+        
+        
+        % behaviour
+        % - grab subject specific variables from aap structure
+        behaviourSetting = aas_getsetting(aap,'behaviour'); % as cell array
+        behaviourSubj = behaviourSetting(strcmp({behaviourSetting.subject},aas_getsubjname(aap,subj)));
+        if isempty(behaviourSubj)
+            behaviourSubj = behaviourSetting(strcmp({behaviourSetting.subject},'*')); 
+        end    
+        
+        behaviourSess = behaviourSubj(strcmp({behaviourSubj.session},aas_getsessname(aap,sess)));
+        if isempty(behaviourSess)
+            behaviourSess = behaviourSubj(strcmp({behaviourSubj.session},'*')); 
+        end  
+        
+        % if, else
+        if numel(behaviourSess)>1
+            aas_log(aap,false,sprintf('ERROR: task structure for %s',aas_getsessdesc(aap,subj,sess))); % false = warning, true = error
+        elseif isempty(behaviourSess)
+            % error
+        else
+            structtask = behaviourSess.taskstructure;
+
+            % - do it
+            for j=1:size(structtask,2)
+                structtask(j).latency = structtask(j).picstart * 1000;
+            end
+
+            % Find all events with event marker of stimulus
+            allEventTypes = {EEG.event.type}'; %'
+            eventIdx = find(strcmp(allEventTypes, behaviourSess.eventtype));
+
+            % I and J to loop through event marker indexes and table indexes
+            I=zeros(1,numel(eventIdx))'; %' preallocate
+            for k=1:numel(eventIdx)
+                I(k) = k;
+            end
+            J = eventIdx;
+
+            % Integrate information into each stimulus marker
+            for k=1:numel(I)
+                i = I(k); % absolute number of epoch event
+                j = J(k); % index number of epoch event
+
+                EEG.event(j).picnum = structtask(i).picnum;
+                EEG.event(j).soundnum = structtask(i).soundnum;
+                EEG.event(j).trialType = structtask(i).trialType;
+                EEG.event(j).correct = structtask(i).correct;
+                EEG.event(j).RT = structtask(i).RTs;
+            end
+        end
+
+
+        
         % edit
         % - specify operations
-        toEditsetting = aas_getsetting(aap,'toEdit');
+        toEditsetting = aas_getsetting(aap,'toEdit'); % cell array, 
         toEditsubj = toEditsetting(...
             cellfun(@(x) any(strcmp(x,aas_getsubjname(aap,subj))),{toEditsetting.subject}) | ...
             strcmp({toEditsetting.subject},'*')...
