@@ -32,7 +32,7 @@
             </threshold>
             
             <inputstreams>
-                <stream>crossfreq</stream>
+                <stream>connfreq</stream>
             </inputstreams>
             
             <outputstreams>
