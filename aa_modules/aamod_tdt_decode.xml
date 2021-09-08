@@ -59,6 +59,7 @@
                 <stream>settings</stream>
                 <stream>mask</stream>
                 <stream isrenameable='1'>result</stream>
+                <stream isrenameable='1'>result_pairwise</stream>
             </outputstreams>    
             
         </currenttask>
