@@ -15,7 +15,7 @@ aap = aa_test_inittest(mfilename('fullpath'), parameterfile, deleteprevious, whe
 % analysis options - batch
 % -------------------------------------------------------------------------
 
-aap.options.wheretoprocess = 'parpool'; % localsingle
+aap.options.wheretoprocess = 'matlab_pct'; % localsingle
 aap.directory_conventions.poolprofile = 'local';
 aap.options.aaparallel.numberofworkers = 2;
 aap.options.aaparallel.memory = 2;
