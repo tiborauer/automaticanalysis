@@ -5,6 +5,8 @@ TEMPLATEDIR=$TOOLDIR/templates
 
 sudo apt-get update
 sudo apt-get install libtinfo5 libtinfo6 dc libxml2-utils
+conda config --set channel_priority false
+conda config --prepend channels new_channel conda-forge
 
 # All MATLAB tools MUST be installed referred by the parameterset
 source $GITHUB_WORKSPACE/.github/workflows/tools_urls.sh
