@@ -24,7 +24,7 @@ function install_tool() {
             git clone -b ${giturl[2]} ${giturl[1]}
         fi
         if [[ -f ${folder}/requirements.txt ]]; then
-            python2.7 -m pip install -r ${folder}/requirements.txt
+            $CONDA/bin/conda install --file ${folder}/requirements.txt
         fi
     fi
 

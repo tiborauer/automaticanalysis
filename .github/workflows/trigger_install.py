@@ -1,5 +1,3 @@
-# Note: Assume Python 2.7, since that will have been installed for facemasking requirements.
-#
 # Using python (instead of matlab) because using system() in matlab gives enormous amount of
 # command window output, and there is some problem with the status code from system()
 
