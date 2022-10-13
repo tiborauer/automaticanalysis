@@ -5,8 +5,13 @@ TEMPLATEDIR=$TOOLDIR/templates
 
 sudo apt-get update
 sudo apt-get install libtinfo5 libtinfo6 dc libxml2-utils
+
+echo "Configure conda"
 $CONDA/bin/conda config --set channel_priority false
-$CONDA/bin/conda config --prepend channels conda-forge
+$CONDA/bin/$CONDA/bin/conda config --prepend channels conda-forge
+$CONDA/bin/conda update conda
+$CONDA/bin/conda install python=3.8
+echo "Python is $(python --version)"
 
 # All MATLAB tools MUST be installed referred by the parameterset
 source $GITHUB_WORKSPACE/.github/workflows/tools_urls.sh
