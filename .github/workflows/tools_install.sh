@@ -7,9 +7,10 @@ sudo apt-get update
 sudo apt-get install libtinfo5 libtinfo6 dc libxml2-utils
 
 echo "Configure conda"
-$CONDA/bin/conda config --set channel_priority false
+$CONDA/bin/conda config --set channel_priority strict
 $CONDA/bin/conda config --prepend channels conda-forge
 $CONDA/bin/conda update conda
+$CONDA/bin/conda update conda-build
 $CONDA/bin/conda install python=3.8
 echo "Python is $(python --version)"
 
