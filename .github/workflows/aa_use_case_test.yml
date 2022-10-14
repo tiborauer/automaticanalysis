@@ -85,7 +85,7 @@ jobs:
       - name: Run script
         uses: matlab-actions/run-command@v1
         with:
-          command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile(getenv('HOME'),'tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_AROMA','haltonerror',true)
+          command: setenv('PATH',[fullfile(getenv('CONDA'),'bin') pathsep fullfile(getenv('CONDA'),'condabin') pathsep getenv('PATH')]); addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile(getenv('HOME'),'tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_AROMA','haltonerror',true)
 
       - name: Archive data
         uses: actions/upload-artifact@v2
