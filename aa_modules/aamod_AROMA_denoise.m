@@ -3,13 +3,15 @@ function [ aap,resp ] = aamod_AROMA_denoise(aap, task, subject_index, session_in
 % denoise an EPI using FSL's ICA-AROMA
 %
 % This requires AROMA-ICA to be installed and added as an aa toolbox.
-% Also, AROMA requires python2.7 and pip.
+% Also, AROMA requires conda and 'aroma' environment with python 3.8
 %
 % The easiest way to install is prolly:
 %
-%   % cd /users/abcd1234/tools
-%   % git clone https://github.com/maartenmennes/ICA-AROMA.git
-%   % python2.7 -m pip install -r ICA-AROMA/requirements.txt
+%   cd /users/abcd1234/tools
+%   git clone https://github.com/maartenmennes/ICA-AROMA.git
+%   conda create -n aroma python=3.8
+%   conda activate aroma
+%   conda install --file ICA-AROMA/requirements.txt
 %
 %   (assuming that the repo link is still valid)
 %
@@ -178,7 +180,8 @@ switch task
             rmdir(OUT_DIR,'s');
         end
         
-        command = sprintf('python %s -in %s -out %s -mc %s -m %s', AROMA_FNAME, EPIMNI_FNAME, OUT_DIR, MC_FNAME, REFMASK_FNAME);
+        prefixconda = ['source ' fullfile(aap.directory_conventions.condadir,'bin','activate aroma'];
+        command = sprintf('%s;python %s -in %s -out %s -mc %s -m %s', prefixconda, AROMA_FNAME, EPIMNI_FNAME, OUT_DIR, MC_FNAME, REFMASK_FNAME);
         [ status,result ] = aas_runfslcommand(aap,command);
         if (status > 0)
             aas_log(aap, true, sprintf('Error running AROMA: %s', result));
@@ -240,14 +243,13 @@ switch task
             aas_log(aap, true, sprintf('%s: ICA_AROMA must be installed in %s. Exiting...', mfilename, AROMA_FNAME));
         end
 
-        % AROMA requires python2.7
-        % use system instead of aas_shell to avoid the latter's confusing error message if which not found
-        
-        [ status,result ] = system('which python2.7');
-
-        if (status > 0 || isempty(result))
-            aas_log(aap, true, sprintf('%s: ICA_AROMA requires python 2.7 (not found). Exiting...', mfilename));
-        end       
+        % AROMA requires conda and 'aroma' environment with python 3.8
+        if ~isfield(aap.directory_conventions,'condadir') || isempty(aap.directory_conventions.condadir), aas_log(aap,true,'aap.directory_conventions.condadir is not specified'); end
+        [~,w] = aas_shell([fullfile(aap.directory_conventions.condadir,'bin','conda') ' info -e']);
+        if ~any(cellfun(@(l) startsWith(l,'aroma'), strsplit(w,'\n'))), aas_log(aap,true,'conda environment "aroma" is not specified'); end
+        [~,w] = aas_shell(['source ' fullfile(aap.directory_conventions.condadir,'bin','activate aroma; python --version')]); 
+        verPy = regexp(w,'(?<=Python )[0-9\.]*','match');
+        if ~startsWith(verPy{1},'3.8'), aas_log(aap,true,'aroma requires python 3.8.x'); end
         
         % may as well check for template while we're here
         
