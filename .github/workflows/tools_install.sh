@@ -11,8 +11,6 @@ $CONDA/bin/conda config --set channel_priority strict
 $CONDA/bin/conda config --prepend channels conda-forge
 $CONDA/bin/conda update conda
 $CONDA/bin/conda update conda-build
-$CONDA/bin/conda install python=3.8
-echo "Python is $(python --version)"
 
 # All MATLAB tools MUST be installed referred by the parameterset
 source $GITHUB_WORKSPACE/.github/workflows/tools_urls.sh

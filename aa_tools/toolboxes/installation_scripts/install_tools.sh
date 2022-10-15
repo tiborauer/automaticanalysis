@@ -24,6 +24,8 @@ function install_tool() {
             git clone -b ${giturl[2]} ${giturl[1]}
         fi
         if [[ -f ${folder}/requirements.txt ]]; then
+            $CONDA/bin/conda create -n ${name} python=3.8
+            source $CONDA/bin/activate ${name}
             $CONDA/bin/conda install --file ${folder}/requirements.txt
         fi
     fi

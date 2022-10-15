@@ -72,6 +72,7 @@
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>fieldtrip</name>
                 <dir ui='dir'>/home/runner/tools/fieldtrip</dir>
             </toolbox>
+            <condadir desc='Path to Anaconda or Miniconda installtion' ui='dir'>$CONDA</condadir>
             <linuxshell desc='Linux shell used to run linux commands' ui='text'>bash</linuxshell>
             <fsldir desc='Path to fsl' ui='dir'>/home/runner/tools/fsl</fsldir>
             <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'>/home/runner/tools/config/fsl_bash.sh</fslsetup>

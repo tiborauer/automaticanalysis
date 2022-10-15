@@ -44,6 +44,7 @@
                 <requiredPlugins></requiredPlugins>
             </extraparameters>
         </toolbox>
+        <condadir desc='Path to Anaconda or Miniconda installtion' ui='dir'></condadir>
         <linuxshell desc='Linux shell used to run linux commands' ui='text'></linuxshell>
         <fsldir desc='Path to fsl' ui='dir'></fsldir>
         <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'></fslsetup>
