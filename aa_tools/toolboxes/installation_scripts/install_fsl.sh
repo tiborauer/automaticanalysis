@@ -32,7 +32,7 @@ if [[ "x${STANDARDONLY}x" == "x1x" ]]; then
     rm fsl-6.0.5.2-centos7_64.tar.gz
 else
     wget -q https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/releases/fslinstaller.py
-    python fslinstaller.py -V $VERION -d ${INSTDIR}/fsl -s 1 -m 1
+    python fslinstaller.py -V $VERSION -d ${INSTDIR}/fsl -s 1 -m 1
 
     # config script
     if [[ $(basename $(echo $SHELL)) == "bash" ]]; then
