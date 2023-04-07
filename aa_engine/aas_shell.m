@@ -60,7 +60,7 @@ if s && (~quiet || stopforerrors)
     [~, wpath]=system('echo $PATH');
     [~, wenv]=system('/usr/bin/env');
     aas_log([],false,sprintf('***LINUX ERROR FROM SHELL %s\n***WHILE RUNNING COMMAND\n%s',w,[prefix log_path]));
-    aas_log([],stopforerrors,sprintf('***WITH PATH\n%s\n',wpath]));
+    aas_log([],stopforerrors,sprintf('***WITH PATH\n%s\n',wpath));
     aas_log([],stopforerrors,sprintf('***WITH ENVIRONMENT VARIABLES\n%s',wenv));
     aas_log([],false,'***END, CONTINUING');
 end
