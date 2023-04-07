@@ -180,7 +180,7 @@ switch task
             rmdir(OUT_DIR,'s');
         end
         
-        command = sprintf('conda activate ica-aroma; python %s -in %s -out %s -mc %s -m %s', AROMA_FNAME, EPIMNI_FNAME, OUT_DIR, MC_FNAME, REFMASK_FNAME);
+        command = sprintf('python %s -in %s -out %s -mc %s -m %s', AROMA_FNAME, EPIMNI_FNAME, OUT_DIR, MC_FNAME, REFMASK_FNAME);
         [ status,result ] = aas_runfslcommand(aap,command);
         if (status > 0)
             aas_log(aap, true, sprintf('Error running AROMA: %s', result));
