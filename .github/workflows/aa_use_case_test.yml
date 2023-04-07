@@ -72,6 +72,7 @@ jobs:
 
       - name: Install tools and configure aa
         run: |
+          conda init bash
           conda activate ica-aroma
           python trigger_install.py
         working-directory: ${{github.workspace}}/.github/workflows
