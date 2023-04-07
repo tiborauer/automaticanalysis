@@ -16,7 +16,7 @@ on:
 # Default settings
 defaults:
     run:
-      shell: bash
+      shell: bash -el {0}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -72,7 +72,6 @@ jobs:
 
       - name: Install tools and configure aa
         run: |
-          conda init bash
           conda activate ica-aroma
           python trigger_install.py
         working-directory: ${{github.workspace}}/.github/workflows
