@@ -68,8 +68,6 @@ jobs:
 
       - name: Install tools and configure aa
         run: |
-          conda info
-          conda list
           python trigger_install.py
         working-directory: ${{github.workspace}}/.github/workflows
         env:

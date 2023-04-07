@@ -16,10 +16,14 @@ STANDARDONLY=$4
 CONFIGFILE=$5
 
 function fslconfig_bash {
+    echo 'IFS=":"'
+    echo 'read -ra pathvar <<< $PATH'
+    echo 'condaPath=(); for p in ${pathvar[@]}; do if [[ $p == *"conda"* ]]; then condaPath+=($p); fi; done'
     echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:INSTDIR/fsl/fslpython/lib:INSTDIR/fsl/lib'
     echo 'export FSLDIR=INSTDIR/fsl'
-    echo 'source $FSLDIR/etc/fslconf/fsl.sh'
+    echo '. $FSLDIR/etc/fslconf/fsl.sh'
     echo 'export PATH=$FSLDIR/bin:$PATH'
+    echo 'if [[ ${#condaPath[@]} > 0 ]]; then export PATH=$(printf "%s:" "${condaPath[@]}")$PATH; fi'
 }
 
 cd ${INSTDIR}
