@@ -14,7 +14,7 @@ source $GITHUB_WORKSPACE/aa_tools/toolboxes/installation_scripts/install_tools.s
 echo "FSL: ${LOAD_FSL}; FREESURFER: ${LOAD_FREESURFER}"
 
 if [[ "x${LOAD_FSL}x" == "x1x" ]]; then
-    source $GITHUB_WORKSPACE/aa_tools/toolboxes/installation_scripts/install_fsl.sh $TOOLDIR 6.0.5 centos7 0 $TOOLDIR/config/fsl_bash.sh
+    source $GITHUB_WORKSPACE/aa_tools/toolboxes/installation_scripts/install_fsl.sh $TOOLDIR 6.0.6.2 0 $TOOLDIR/config/fsl_bash.sh
 fi
 
 if [[ "x${LOAD_FREESURFER}x" == "x1x" ]]; then
