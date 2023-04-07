@@ -63,7 +63,6 @@ jobs:
           conda init
           conda config --set auto_activate_base false
           conda create -n ica-aroma python=3.6
-          echo "conda activate ica-aroma" >> ~/.bashrc
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v1
@@ -73,6 +72,7 @@ jobs:
 
       - name: Install tools and configure aa
         run: |
+          conda activate ica-aroma
           python trigger_install.py
         working-directory: ${{github.workspace}}/.github/workflows
         env:
