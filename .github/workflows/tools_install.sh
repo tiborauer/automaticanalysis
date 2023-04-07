@@ -1,5 +1,5 @@
 TOOLDIR=/test/tools
-mkdir $TOOLDIR
+if [[ ! -d $TOOLDIR ]]; then mkdir $TOOLDIR; fi
 mkdir $TOOLDIR/config
 TEMPLATEDIR=$TOOLDIR/templates
 
