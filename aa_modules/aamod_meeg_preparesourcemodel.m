@@ -57,7 +57,7 @@ switch task
                 sourcemodel.inside(~sourcemodel.inside,:) = [];
                 
             case 'corticalsheet'
-                [~, FS] = aas_cache_get(aap,'fs');
+                [~, FS] = aas_cache_get(aap,'freesurfer');
                 FS.load;
                 
                 aas_runFScommand(aap,sprintf('export PATH=$PATH:%s/bin_rh_linux64; %s/bin/ft_postfreesurferscript.sh %s %s %s',WB.toolPath, FT.toolPath,...
