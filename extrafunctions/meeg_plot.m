@@ -4,9 +4,12 @@ function h = meeg_plot(cfg,data)
 %   - channels  - {1xN}
 %   - latency   - [Nx2], second
 %   - view      - char (item from VAs
+%   - statlim   - [Nx2]
+%   - scaling   - 'joint','individual'
+%   - showlabel - true/false
 
 %% Contants
-FIGWIDTH = 1080;%*0.75;
+FIGWIDTH = 1080;
 if isfield(cfg,'width'), FIGWIDTH = cfg.width; end
 TOPO_MAXCOL = 4; % maximum number of columns of plot mosaic, should be even
 
@@ -28,11 +31,13 @@ VAs = {...
     };
 
 %% Groups
+cfg.showlabel = ~isfield(cfg,'showlabel') || cfg.showlabel;
 if numel(data) > 1
     labels = arrayfun(@(x) sprintf('group #%d',x),1:numel(data),'UniformOutput',false);
 else
     labels = {'group'};
 end
+
 
 %% Stats
 if isfield(data{1},'stat')
@@ -101,7 +106,7 @@ if isfield(cfg,'channels'), mplier = numel(cfg.channels); end
 if isfield(cfg,'view') && strcmp(cfg.view,'ortho'), mplier = 3; end
 sizeplot(1) = sizeplot(1)*mplier;
 
-%% Scale
+%% Scaling
 for s = 1:numel(data)
     if isfield(data{s},'mask') && any(data{s}.mask(:))
         mask = data{s}.mask;
@@ -117,8 +122,13 @@ for s = 1:numel(data)
             maxval(s) = prctile(data{s}.(cfg.parameter)(mask),99,'all');
         end
     else
-        minval(s) = prctile(cell2mat(cellfun(@(d) d.(cfg.parameter)(mask), data(~strcmp(labels,'stat')), 'UniformOutput',false)),1,'all');
-        maxval(s) = prctile(cell2mat(cellfun(@(d) d.(cfg.parameter)(mask), data(~strcmp(labels,'stat')), 'UniformOutput',false)),99,'all');
+        if isfield(cfg,'scaling') && strcmp(cfg.scaling,'individual')
+            minval(s) = prctile(data{s}.(cfg.parameter)(mask),1,'all');
+            maxval(s) = prctile(data{s}.(cfg.parameter)(mask),99,'all');
+        else
+            minval(s) = prctile(cell2mat(cellfun(@(d) d.(cfg.parameter)(mask), data(~strcmp(labels,'stat')), 'UniformOutput',false)),1,'all');
+            maxval(s) = prctile(cell2mat(cellfun(@(d) d.(cfg.parameter)(mask), data(~strcmp(labels,'stat')), 'UniformOutput',false)),99,'all');
+        end
     end
     if minval(s) == maxval(s)
         minval(s) = minval(s)-abs(0.1*minval(s)); 
@@ -221,8 +231,13 @@ for t = 1:size(cfg.latency,1)
                         
                         tmpcfg.showoutline = 'yes';
                         tmpcfg.marker = 'labels';
+%                         tmpcfg.marker = 'off';
                         tmpcfg.markerfontsize = 4;
                         tmpcfg.comment = 'no';
+%                         tmpcfg.highlight = 'on';
+%                         tmpcfg.highlightchannel = dataPlot.label(data{1}.mask);
+%                         tmpcfg.highlightsymbol = '*';
+%                         tmpcfg.highlightcolor = [1 1 1];
                         dataPlot = keepfields(dataPlot,{'label',tmpcfg.parameter,'elec','dimord'});
                         figure; ft_topoplotER(tmpcfg,dataPlot);
                         currfig = gcf;
@@ -288,8 +303,10 @@ for t = 1:size(cfg.latency,1)
                 set(p(i), 'Tag', 'jk', 'Visible', 0);
                 set(p(i), 'Tag', 'ij', 'Visible', 0);
             end
-            title(p(1), strTitle);
-            set(get(p(1),'Title'), 'Visible', 1);
+            if cfg.showlabel
+                title(p(1), strTitle);
+                set(get(p(1),'Title'), 'Visible', 1);
+            end
             if ~isempty(cmaps{s})
                 colormap(p(i),cmaps{s});
                 cb = colorbar(p(i));
@@ -308,7 +325,7 @@ for t = 1:size(cfg.latency,1)
         end        
     end
 end
-set(h,'Position',[0,0,FIGWIDTH,round(sizeplot(1)/sizeplot(2)*FIGWIDTH)]);
+set(h,'Position',[100,100,FIGWIDTH,round(sizeplot(1)/sizeplot(2)*FIGWIDTH)]);
 set(h,'PaperPositionMode','auto');
 
 end
