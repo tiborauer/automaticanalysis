@@ -22,9 +22,9 @@ else % based on stream
         stream = stream{1};
         while ~strcmp(currmod,sourcemod)
             inpstreams = aap.internal.inputstreamsources{currmodnum}.stream;
-            srcmatch = strcmp({inpstreams.name},stream);
+            srcmatch = cellfun(@(ss) any(strcmp(ss,stream)), cellfun(@(s) strsplit(s,'.'), {inpstreams.name}, 'UniformOutput', false)); % handle fully specified input streams
             if any(srcmatch)
-                currmodnum = inpstreams(strcmp({inpstreams.name},stream)).sourcenumber;
+                currmodnum = inpstreams(srcmatch).sourcenumber;
             else
                 aas_log(aap,true,sprintf('stream "%s" cannot be tracked beyond module "%s"',stream,currmod)); 
                 currmodnum = [];
