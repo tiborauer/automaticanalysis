@@ -28,10 +28,8 @@ else
 end
 
 if (~strcmp(aap.directory_conventions.remotefilesystem,'none'))
-    [~, nme, ~]=fileparts(tempname);
-    tempdirtodelete=[datestr(now,30) '_' nme];
-    [s, w]=system('whoami');
-    tempdirtodelete=fullfile('/cn_data',deblank(w),tempdirtodelete);
+    nme = spm_file(tempname,'basename');
+    tempdirtodelete=fullfile(aap.options.aaworkerroot,['remote' datestr(now,30) '_' nme(1:8)]);
     aap.acq_details.root=fullfile(tempdirtodelete,aap.acq_details.root);
 else
     tempdirtodelete=[];

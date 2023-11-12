@@ -17,8 +17,8 @@ end
 % cleanup aaworker path
 if isfield(aap.options,'aaworkercleanup') && ~isempty(aap.options.aaworkercleanup)
     aawp = aaworker_getparmpath(aap);
-    for d = dir(fullfile(aawp,'aaworker*'))'
-        if etime(clock,datevec(d.datenum))/(24*60*60) > aap.options.aaworkercleanup
+    for d = [dir(fullfile(aawp,'aaworker*'))' dir(fullfile(aawp,'remote*'))']
+        if etime(clock,datevec(d.date,'dd-mmm-yyyy HH:MM:SS'))/(24*60*60) > aap.options.aaworkercleanup
             aas_log(aap,false,sprintf('INFO: aaworker folder %s is older than %d days...Deleting',d.name,aap.options.aaworkercleanup))
             try
                 rmdir(fullfile(aawp,d.name),'s');
@@ -30,19 +30,18 @@ if isfield(aap.options,'aaworkercleanup') && ~isempty(aap.options.aaworkercleanu
     end
 end
 
+global aacache
 % Set UTC time function
 if exist('utc_time','file')
-    utc_timeFunc = @utc_time;
+    aacache.utc_time = @utc_time;
 else
     aas_log(aap,false,'INFO: utc_time is not found. java function will be used\n')
-    utc_timeFunc = @java.lang.System.currentTimeMillis;
+    aacache.utc_time = @java.lang.System.currentTimeMillis;
 end
-aas_cache_put(aap,'utc_time',utc_timeFunc,'utils');
 
 %% Set Paths
-aas_cache_put(aap,'bcp_path',path,'system');
-aas_cache_put(aap,'bcp_shellpath',getenv('PATH'),'system');
-
+aacache.path.bcp_path = path;
+aacache.path.bcp_shellpath = getenv('PATH');
 % Path for SPM
 SPMDIR = '';
 % - backward compatibility
@@ -162,8 +161,7 @@ end
 
 % Path to DCMTK
 if isfield(aap.directory_conventions,'DCMTKdir') && ~isempty(aap.directory_conventions.DCMTKdir)
-    [s,p] = aas_cache_get(aap,'bcp_shellpath','system');
-    setenv('PATH',[p pathsep fullfile(aap.directory_conventions.DCMTKdir,'bin')]);
+    setenv('PATH',[aacache.path.bcp_shellpath ':' fullfile(aap.directory_conventions.DCMTKdir,'bin')]);
 end
 
 reqpath = build_reqpath(aa.Path, aap, SPMDIR);

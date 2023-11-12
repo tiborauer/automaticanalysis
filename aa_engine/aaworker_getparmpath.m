@@ -6,8 +6,11 @@ if strcmp(aap.options.wheretoprocess,'aws')
 elseif ~isempty(aap.options.aaworkerroot)
     aapth = aap.options.aaworkerroot;
 else
-    [s, w]=system('whoami');
-    username=deblank(w);
+    username=spm('GetUser');
+    if strcmp(username,'anonymous')
+        [s, w]=system('whoami');
+        username=deblank(w);
+    end;
   
     if ispc
         aapth = getenv('USERPROFILE');
@@ -22,9 +25,10 @@ else
     end
     
     assert(~isempty(aapth),'failed to find home directory');
+
+    aapth = fullfile(aapth,'.aa');
 end
 
-aapth = fullfile(aapth,'.aa');
 if nargin < 2 % return aaworker root
     pth = aapth;
     return
