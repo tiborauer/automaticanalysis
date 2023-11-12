@@ -3,16 +3,16 @@ if nargin < 3, quiet = false; end
 
 % AVG
 % Check whether ${FSLDIR}/bin is already in there
-pth=getenv('PATH');
+pth = getenv('PATH');
+if isempty(pth), pth = '$PATH'; end
 FSbin = fullfile(aap.directory_conventions.freesurferdir,'bin');
 mniFSbin = fullfile(aap.directory_conventions.freesurferdir,'mni','bin');
 fastFSbin = fullfile(aap.directory_conventions.freesurferdir,'fsfast','bin');
 % Add colons to beginning and end of path in case FSbin is at beginning or
 % end and not bracketed by them
 for path2check = {FSbin mniFSbin fastFSbin}
-    sf=strfind([':' pth ':'],[':' path2check{1} ':']);
-    if (isempty(sf))
-        pth = [pth ':' path2check{1}];
+    if ~contains([':' pth ':'],[':' path2check{1} ':'])
+        pth = [path2check{1} ':' pth];
     end
 end
 

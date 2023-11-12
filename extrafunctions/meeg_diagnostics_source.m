@@ -5,10 +5,18 @@ STATFIELDS = {'stat' 'mask'};
 if nargin >= 3, figtitle = varargin{1}; else, figtitle = 'Sample'; end
 if nargin >= 4, savepath = varargin{2}; else, savepath = ''; end
 
-if ~iscell(data), data = {data}; end
+if ~iscell(data), data = num2cell(data); end
 
-plotcfg = keepfields(diag,intersect(fieldnames(diag),{'parameter' 'width' 'view' 'statlim'}));
-plotcfg.latency = diag.snapshottwoi./1000; % second
+plotcfg = keepfields(diag,intersect(fieldnames(diag),{'parameter' 'width' 'view' 'statlim','scaling','showlabel'}));
+if isfield(data{1},'time')
+    plotcfg.latency = diag.snapshottwoi./1000; % second
+elseif isfield(data{1},'freq') % convert freq -> time
+    plotcfg.latency = diag.snapshotfwoi;
+    for s = 1:numel(data)
+        data{s}.time = data{s}.freq;
+        data{s} = rmfield(data{s},'freq');
+    end
+end    
 
 % extract data if needed
 for s = 1:numel(data)

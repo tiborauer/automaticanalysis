@@ -255,74 +255,75 @@ switch task
         end
         
         % Detect contrasts ansd recalculate
-        sourceaap = aas_setcurrenttask(aap,aas_getsourcestage(aap,'aamod_meeg_timefrequencyanalysis'));
-        models = aas_getsetting(sourceaap,'trialmodel');
-        models = models(strcmp({models.subject},aas_getsubjname(aap,subj))).model;
-        for i = 1:numel(infnames)
-            m = models(arrayfun(@(m) endsWith(spm_file(infnames{i},'basename'),['_' m.name]), models));
-            if prepareOnly
+        if prepareOnly
+            for i = 1:numel(infnames)
                 data.elec = elec_final;
                 timefreq     = ft_struct2single(ft_sourceanalysis(cfg, data));  % compute the source model
                 filter = timefreq.avg.filter;
                 outfname = fullfile(aas_getsubjpath(aap,subj),'filter.mat');
                 save(outfname,'filter');
                 aap = aas_desc_outputs(aap,'subject',subj,'sourcefilter',outfname);
-                break;
-            else
+            end
+        else
+            sourceaap = aas_setcurrenttask(aap,aas_getsourcestage(aap,'aamod_meeg_timefrequencyanalysis'));
+            models = aas_getsetting(sourceaap,'trialmodel');
+            models = models(strcmp({models.subject},aas_getsubjname(aap,subj))).model;            
+            for i = 1:numel(infnames)
+                m = models(arrayfun(@(m) endsWith(spm_file(infnames{i},'basename'),['_' m.name]), models));
                 dat = load(infnames{i}); f = fieldnames(dat); data = dat.(f{1});
                 data.elec = elec_final;
-                timefreq     = ft_struct2single(ft_sourceanalysis(cfg, data));  % compute the source model
-            end
-            timefreq.avg.dimord = strrep(data.dimord,'chan','pos');
-            if numel(m.event.weights) == 1 % single
-                if ~isempty(bndcfg.bandspec.band) % bands
-                    ipf = [];
-                    if aas_stream_has_contents(aap,'subject',subj,'ipf')
-                        fnIPF = cellstr(aas_getfiles_bystream(aap,'subject',subj,'ipf'));
-                        load(fnIPF{contains(spm_file(fnIPF,'basename'),m.event.names{1})},'ipf');
+                timefreq = ft_struct2single(ft_sourceanalysis(cfg, data));  % compute the source model
+                timefreq.avg.dimord = strrep(data.dimord,'chan','pos');
+                if numel(m.event.weights) == 1 % single
+                    if ~isempty(bndcfg.bandspec.band) % bands
+                        ipf = [];
+                        if aas_stream_has_contents(aap,'subject',subj,'ipf')
+                            fnIPF = cellstr(aas_getfiles_bystream(aap,'subject',subj,'ipf'));
+                            load(fnIPF{contains(spm_file(fnIPF,'basename'),m.event.names{1})},'ipf');
+                        end
+                        timeband = ft_average_bands(bndcfg,ipf,timefreq);
                     end
-                    timeband = ft_average_bands(bndcfg,ipf,timefreq);
-                end
-            else  % contrast (assumed to be later than its primaries
-                testmodel = repmat(rmfield(m,'name'),1,numel(m.event.names));
-                for tm = 1:numel(testmodel)
-                    testmodel(tm).event.names = m.event.names(tm);
-                    testmodel(tm).event.weights = 1;
-                end
-                prmodels = arrayfun(@(tm) find(arrayfun(@(om) isequal(rmfield(om,'name'),tm),models)), testmodel, 'UniformOutput', false);
-                if any(cellfun(@isempty, prmodels)), aas_log(aap,true,sprintf('One or more of the primary trialmodel(s) of %s not found', m.name)); end
-                prmodels = cell2mat(prmodels);
-                for estim = EST
-                    for pri = 1:numel(prmodels)
-                        dat = load(strrep(outfnames{pri},'timefreq',estim{1})); f = fieldnames(dat); dat = dat.(f{1});
-                        if isfield(dat.avg,'dimord'), dat.avg = rmfield(dat.avg,'dimord'); end
-                        prdata{pri} = ft_selectdata([],dat);
-                        prdata{pri}.dimord = strrep(data.dimord,'chan','pos');
+                else  % contrast (assumed to be later than its primaries
+                    testmodel = repmat(rmfield(m,'name'),1,numel(m.event.names));
+                    for tm = 1:numel(testmodel)
+                        testmodel(tm).event.names = m.event.names(tm);
+                        testmodel(tm).event.weights = 1;
                     end
-                    combinecfg.parameter = 'pow';
-                    combinecfg.weights = m.event.weights;
-                    combinecfg.contrast = aas_getsetting(sourceaap,'contrastoperation');
-                    combinecfg.normalise = 'no';
-                    combinedata = ft_combine(combinecfg,prdata{:});
-                    switch estim{1}
-                        case 'timefreq'
-                            timefreq.avg.pow = combinedata.pow;
-                        case 'timeband'
-                            timeband.avg.pow = combinedata.pow;
-                    end                    
+                    prmodels = arrayfun(@(tm) find(arrayfun(@(om) isequal(rmfield(om,'name'),tm),models)), testmodel, 'UniformOutput', false);
+                    if any(cellfun(@isempty, prmodels)), aas_log(aap,true,sprintf('One or more of the primary trialmodel(s) of %s not found', m.name)); end
+                    prmodels = cell2mat(prmodels);
+                    for estim = EST
+                        for pri = 1:numel(prmodels)
+                            dat = load(strrep(outfnames{pri},'timefreq',estim{1})); f = fieldnames(dat); dat = dat.(f{1});
+                            if isfield(dat.avg,'dimord'), dat.avg = rmfield(dat.avg,'dimord'); end
+                            prdata{pri} = ft_selectdata([],dat);
+                            prdata{pri}.dimord = strrep(data.dimord,'chan','pos');
+                        end
+                        combinecfg.parameter = 'pow';
+                        combinecfg.weights = m.event.weights;
+                        combinecfg.contrast = aas_getsetting(sourceaap,'contrastoperation');
+                        combinecfg.normalise = 'no';
+                        combinedata = ft_combine(combinecfg,prdata{:});
+                        switch estim{1}
+                            case 'timefreq'
+                                timefreq.avg.pow = combinedata.pow;
+                            case 'timeband'
+                                timeband.avg.pow = combinedata.pow;
+                        end
+                    end
                 end
-            end
-            timefreq.avg = rmfield(timefreq.avg,intersect(fieldnames(timefreq.avg),{'filter','filterdimord'}));
-            timefreq.cfg = []; % remove provenance to save space
-            timefreq.cfg.included = sourcemodel.included;
-            save(outfnames{i},'timefreq')
-            if ~isempty(bndcfg.bandspec.band)
-                timefreq = timeband;
-                timefreq.avg.dimord = strrep_multi(data.dimord,{'chan' 'freq'},{'pos' 'band'});
                 timefreq.avg = rmfield(timefreq.avg,intersect(fieldnames(timefreq.avg),{'filter','filterdimord'}));
                 timefreq.cfg = []; % remove provenance to save space
                 timefreq.cfg.included = sourcemodel.included;
-                save(strrep(outfnames{i},'freq','band'),'timefreq')
+                save(outfnames{i},'timefreq')
+                if ~isempty(bndcfg.bandspec.band)
+                    timefreq = timeband;
+                    timefreq.avg.dimord = strrep_multi(data.dimord,{'chan' 'freq'},{'pos' 'band'});
+                    timefreq.avg = rmfield(timefreq.avg,intersect(fieldnames(timefreq.avg),{'filter','filterdimord'}));
+                    timefreq.cfg = []; % remove provenance to save space
+                    timefreq.cfg.included = sourcemodel.included;
+                    save(strrep(outfnames{i},'freq','band'),'timefreq')
+                end
             end
         end
         

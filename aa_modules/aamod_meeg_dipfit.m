@@ -21,9 +21,12 @@ switch task
         volcondfile = aas_getsetting(aap,'volumeCondutionModel');
         if ~exist(volcondfile,'file'), volcondfile = fullfile(EL.dipfitPath,volcondfile); end
         if ~exist(volcondfile,'file'), aas_log(aap,true,sprintf('Volume condition model %s not found',aas_getsetting(aap,'volumeCondutionModel'))); end
+
+        % mri intensities are expected to be non-negative integers
         mrifile = aas_getfiles_bystream_multilevel(aap,'subject',subj,'structural');
-        mri = ft_read_mri(mrifile,'dataformat','nifti_spm');
-        mri.anatomy = mri.anatomy/max(mri.anatomy(:));
+        mri = ft_read_mri(mrifile,'dataformat','nifti_spm');        
+        mri.anatomy(mri.anatomy<0) = 0;
+        mri.anatomy = round(mri.anatomy); 
         
         trans = aas_getsetting(aap,'transformation');
         if ischar(trans) % target channel location
