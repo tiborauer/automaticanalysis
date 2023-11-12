@@ -20,7 +20,7 @@ demoind = cell_index(rawdatadirs, 'aa_demo');
 if demoind==0
     aas_log([],true,'aap.directory_conventions.rawdatadir contains no aa_demo directory');
 end
-demodir = regexp(rawdatadirs{demoind(1)},'[a-zA-Z0-9_\/.]*aa_demo','match');
+demodir = regexp(rawdatadirs{demoind(1)},'[a-zA-Z0-9_\/.]*aa_demo\/.*','match');
 switch temp{2}
     case 'lemon'
         aap.directory_conventions.rawmeegdatadir = fullfile(demodir{1},'LEMON_EEG');
