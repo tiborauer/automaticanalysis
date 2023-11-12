@@ -53,7 +53,14 @@ if (s && contains(cmd,'ln')  && contains(cmd,'-f') && contains(w,'File exists'))
     s = 0;
     w = '';      
 end
-
+if contains(cmd,'rsync')
+    retry = 0;
+    while s && retry < 5 % retry connection 
+        pause(1);
+        [s,w]=system([prefix cmd]);
+        retry = retry + 1;
+    end
+end
 
 %% Process error if we're in non-quiet mode OR if we want to stop for errors
 if s && (~quiet || stopforerrors)

@@ -181,9 +181,9 @@
 
     <acq_details>
         <root desc='Root on local machine for processed data' ui='dir'></root>
-        <s3>
-            <root desc='Root on S3 for processed data' ui='dir'>teststudy</root>
-        </s3>
+        <remote>
+            <root desc='Root on remote filesystem for processed data' ui='dir'>teststudy</root>
+        </remote>
         <numdummies desc='Number of dummy scans' ui='int'>0</numdummies>
         <topscannumber desc='Ignore EPI scans after this one' ui='int'/>
 

@@ -43,19 +43,43 @@ switch task
         for d = 1:numel(aap.acq_details.subjects(i).mriname)
             rawdata_subj=aas_findvol(aap,[i d]);
             switch aap.directory_conventions.remotefilesystem
-                case 'none'
+                case {'none' 'ssh'}
                     % Looks for DICOMs in here and in all subdirectories
-                    allpths=textscan(genpath(rawdata_subj),'%s','delimiter',':'); allpths = allpths{1};
-                    alldicomfiles{d} = {};
+                    if strcmp(aap.directory_conventions.remotefilesystem,'ssh')
+                        remote = textscan(rawdata_subj,'%s', 'Delimiter',':');
+                        remotehost = remote{1}{1}; rawdata_subj = remote{1}{2};
+                        [s,w] = aas_shell(sprintf(['ssh %s "find %s -type d | sort"'],remotehost,rawdata_subj));
+                        allpths = strsplit(w,'\n')'; allpths(end) = [];     
+                    else 
+                        allpths=textscan(genpath(rawdata_subj),'%s','delimiter',':'); allpths = allpths{1};
+                        alldicomfiles{d} = {};
+                    end
                     serieslist=[];
                     acqlist=[];
                     for thispth = allpths'
-                        fn=dir(fullfile(thispth{1},aap.directory_conventions.dicomfilter));
-                        fn = fn(~[fn.isdir]);
-                        if isempty(fn), continue; end
-                        aas_log(aap,false,sprintf('Examining folder %s',thispth{1}));
-                        fullfn = spm_file(char({fn.name}'),'path',thispth{1});
-                        H = spm_dicom_headers(fullfn);
+                        if contains(thispth,' ')
+                            aas_log(aap,false,sprintf('WARNING: Whitespace is not allowed in foldername: %s',thispth{1}));
+                            continue; 
+                        end
+                        if strcmp(aap.directory_conventions.remotefilesystem,'ssh')
+                            [s,w] = aas_shell(sprintf('ssh %s "find %s -mindepth 1 -maxdepth 1 -name ''%s'' | sort"',...
+                                remotehost,thispth{1}, aap.directory_conventions.dicomfilter));
+                            fullfn = strsplit(w,'\n'); fullfn(end) = [];
+                            if isempty(fullfn{1}), continue; end
+                            aas_log(aap,false,sprintf('Examining folder %s',thispth{1}));
+                            fullfn = cellfun(@(x) [remotehost ':' x], fullfn,'UniformOutput',false);
+                            tempdir = spm_file(tempname,'basename');
+                            tempdir = fullfile(aas_getsubjpath(aap,i),tempdir(1:8)); aas_makedir(aap,tempdir);
+                            aas_shell(sprintf('rsync %s:%s/%s %s',...
+                                remotehost,thispth{1},aap.directory_conventions.dicomfilter,tempdir));
+                            H = spm_dicom_headers(spm_file(fullfn,'path',tempdir));
+                            rmdir(tempdir,'s')
+                        else
+                            fullfn = cellstr(spm_select('FPList',thispth{1},['.' aap.directory_conventions.dicomfilter]));
+                            if isempty(fullfn{1}), continue; end
+                            aas_log(aap,false,sprintf('Examining folder %s',thispth{1}));
+                            H = spm_dicom_headers(fullfn);
+                        end
                         for fnind=1:numel(H)
                             if (isfield(H{fnind},'SeriesNumber') && isfield(H{fnind},'AcquisitionNumber'))
                                 serieslist=[serieslist H{fnind}.SeriesNumber];
@@ -63,7 +87,7 @@ switch task
                                 if (H{fnind}.SeriesNumber>length(alldicomfiles{d}))
                                     alldicomfiles{d}{H{fnind}.SeriesNumber}=[];
                                 end
-                                alldicomfiles{d}{H{fnind}.SeriesNumber}{end+1}=deblank(fullfn(fnind,:));
+                                alldicomfiles{d}{H{fnind}.SeriesNumber}{end+1}=fullfn{fnind};
                             end
                         end
                     end
@@ -77,19 +101,17 @@ switch task
                     % Go through all of the series we've found
                     rawdata_allseries{d}=unique(serieslist);
                     
-                    if aap.options.autoidentifystructural || aap.options.autoidentifyt2 || aap.options.autoidentifyfieldmaps || aap.options.autoidentifytmaps
-                        for j=1:length(rawdata_allseries{d});
-                            hdr=spm_dicom_headers(alldicomfiles{d}{rawdata_allseries{d}(j)}{1});
-                            for dpf = dicom_protocol_fields{1}'
-                                if isfield(hdr{1},dpf{1}), break; end
-                            end
-                            if isfield(hdr{1},dpf{1})
-                                curr_dicom_protocol_field{d}{j} = dpf{1};
-                            else
-                                aas_log(aap,true,sprintf('Series %d: protocol fields %s not found in DICOM header!',rawdata_allseries{d}(j),sprintf(' %s',dicom_protocol_fields{1}{:})));
-                            end
-                            aas_log(aap,false,sprintf('Series %d (%s) with %d dicom files',rawdata_allseries{d}(j), hdr{1}.(curr_dicom_protocol_field{d}{j}), length(alldicomfiles{d}{rawdata_allseries{d}(j)})));
+                    for j=1:length(rawdata_allseries{d});
+                        hdr=spm_dicom_headers(alldicomfiles{d}{rawdata_allseries{d}(j)}{1});
+                        for dpf = dicom_protocol_fields{1}'
+                            if isfield(hdr{1},dpf{1}), break; end
                         end
+                        if isfield(hdr{1},dpf{1})
+                            curr_dicom_protocol_field{d}{j} = dpf{1};
+                        else
+                            aas_log(aap,true,sprintf('Series %d: protocol fields %s not foound in DICOM header!',rawdata_allseries{d}(j),sprintf(' %s',dicom_protocol_fields{1}{:})));
+                        end
+                        aas_log(aap,false,sprintf('Series %d (%s) with %d dicom files',rawdata_allseries{d}(j), hdr{1}.(curr_dicom_protocol_field{d}{j}), length(alldicomfiles{d}{rawdata_allseries{d}(j)})));
                     end
                 case 's3'
                     % Use delimiter to get series names as CommonPrefixes

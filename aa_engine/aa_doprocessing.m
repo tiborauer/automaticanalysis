@@ -413,12 +413,21 @@ if isfield(aap.tasklist,'currenttask')
     aap.acq_details.root = aap.internal.aap_initial.acq_details.root;
     aap.directory_conventions.analysisid = aap.internal.aap_initial.directory_conventions.analysisid;
     aap.directory_conventions.analysisid_suffix = aap.internal.aap_initial.directory_conventions.analysisid_suffix;
+    if ~strcmp(aap.directory_conventions.remotefilesystem,'none')
+        aap.acq_details.remote.root = aap.internal.aap_initial.acq_details.remote.root;
+    end
 end
 
 % Create folder (required by aas_findinputstreamsources to save provenance)
-if (strcmp(aap.directory_conventions.remotefilesystem,'none'))
-    aapsavepth=fullfile(aap.acq_details.root,[aap.directory_conventions.analysisid aap.directory_conventions.analysisid_suffix]);
-    aas_makedir(aap,aapsavepth);
+aamod_study_init(aap,'doit');
+switch aap.directory_conventions.remotefilesystem
+    case {'ssh' 'none'}
+        aapsavepth = fullfile(aap.acq_details.root,[aap.directory_conventions.analysisid aap.directory_conventions.analysisid_suffix]);
+        aas_makedir(aap,aapsavepth)
+        if strcmp(aap.directory_conventions.remotefilesystem,'ssh')
+            aapsavepth_remote = fullfile(aap.acq_details.remote.root,...
+                [aap.directory_conventions.analysisid aap.directory_conventions.analysisid_suffix]);
+        end
 end
 
 % Use input and output stream information in XML header to find
@@ -435,16 +444,20 @@ else % Restore initial settings
     if isfield(aap,'aap'), aap = rmfield(aap,'aap'); end
 end
 
-% Save AAP structure (S3?)
-if (strcmp(aap.directory_conventions.remotefilesystem,'none'))
-    aapsavefn=fullfile(aapsavepth,'aap_parameters');
-    aap.internal.aapversion=aa.Version;
-    aap.internal.aappath=aa.Path;
-    aap.internal.spmversion=spm('Version');
-    aap.internal.spmpath=spm('Dir');
-    aap.internal.matlabversion=version;
-    aap.internal.matlabpath=matlabroot;
-    save(aapsavefn,'aap');
+aap.internal.aapversion=aa.Version;
+aap.internal.aappath=aa.Path;
+aap.internal.spmversion=spm('Version');
+aap.internal.spmpath=spm('Dir');
+aap.internal.matlabversion=version;
+aap.internal.matlabpath=matlabroot;
+
+switch aap.directory_conventions.remotefilesystem
+    case {'ssh' 'none'}
+        aapsavefn=fullfile(aapsavepth,'aap_parameters');
+        save(aapsavefn,'aap');
+        if strcmp(aap.directory_conventions.remotefilesystem,'ssh')
+            aas_shell(sprintf(['rsync -rav ''''%s/aap_cmap.txt %s/aap_parameters.mat %s/aap_prov.*'''' %s'],aapsavepth,aapsavepth,aapsavepth,aapsavepth_remote));
+        end
 end
 end
 
