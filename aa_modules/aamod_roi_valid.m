@@ -65,7 +65,7 @@ switch task
                     Mm(subjind,[ROI.ROIval]) = mROI;
                     
                 end
-                ROIval = find(any(Nv));
+                ROIval = find(any(Nv,1));
                 Nv = Nv(:,ROIval);
                 Mm = Mm(:,ROIval);
                 
@@ -93,7 +93,7 @@ switch task
                 s2ignore = sum(invalidroi,2)>scrit;
                 
                 % Find ROIs to ignore (after excluding rubbish subjects):
-                r2ignore = sum(invalidroi(~s2ignore,:))>ROIRemoveThr;
+                r2ignore = sum(invalidroi(~s2ignore,:),1)>ROIRemoveThr;
                 
                 % Session Summary:
                 ValidROI(p).sessname          = aas_getsessname(aap,p);
