@@ -141,73 +141,87 @@ if ~isempty(idx)
     fclose(fid);
 end
 
-%% Network (for each FOI)
-if numel(sfx) > 1, aas_log([],true,'mixed stat - NYI'); end
 
-for f = 1:size(snapshotwoi,1)
-    if iscellstr(snapshotwoi)
-        boiind = [f f];
-        fnEdge = sprintf('%s_net_%s_%c.edge',savepath,snapshotwoi{f},sfx);
-    else
-        boiind = [find(freq >= snapshotwoi(f,1),1,'first') find(freq <= snapshotwoi(f,2),1,'last')];
-        fnEdge = sprintf('%s_net_%d-%d_%c.edge',savepath,snapshotwoi(f,:),sfx);
-    end
+%% Network (for each FOI)
+stat0 = stat;
+for dirStat = sfx
+    stat = stat0;
+    switch dirStat
+        case 'p'
+            stat(stat < 0) = 0;
+            cmap = cmap_adjust(cmapbase,stat(stat~=0));
+            BNV.displaySettings.LUT = cmap;
+        case 'n'
+            stat(stat > 0) = 0;
+            cmap = cmap_adjust(cmapbase,stat(stat~=0));
+            BNV.displaySettings.LUT = flipud(cmap);
+    end    
     
-    % Circular
-    % - select data
-    meas = mean(stat(:,boiind(1):boiind(2)),2); mask = logical(meas);
-    connT = table(string(groupStat.labelcmb(mask,:)), meas(mask),'VariableNames',{'conn' 'stat'});
-    step = (max(connT.stat)-min(connT.stat))/(size(cmap,1)-1);
-    if step == 0, connT.indCol(:) = round(size(cmap,1)/2);
-    else, connT.indCol = round((connT.stat-min(connT.stat))/step)+1; end
-    
-    % - plot atlas
-    fig = figure; set(fig,'Position',[0 0 1080 1080]);
-    hold on; set(gca,'visible','off'); axis image;
-    plot(circAtlas.x,circAtlas.y,'*')
-    arrayfun(@(i) text(circAtlas.x(i)-0.025, circAtlas.y(i), circAtlas.label{i}, 'HorizontalAlignment','right', 'Rotation', acosd(circAtlas.y(i)/5)-90), find(circAtlas.x<0))
-    arrayfun(@(i) text(circAtlas.x(i)+0.025, circAtlas.y(i), circAtlas.label{i}, 'HorizontalAlignment','left', 'Rotation', acosd(-circAtlas.y(i)/5)-90), find(circAtlas.x>0))
-        
-    % - plot data
-    arrayfun(@(i) quiver(...
-        circAtlas.x(circAtlas.label == connT.conn(i,1)),...
-        circAtlas.y(circAtlas.label == connT.conn(i,1)),...
-        circAtlas.x(circAtlas.label == connT.conn(i,2))-circAtlas.x(circAtlas.label == connT.conn(i,1)),...
-        circAtlas.y(circAtlas.label == connT.conn(i,2))-circAtlas.y(circAtlas.label == connT.conn(i,1)),...
-        'AutoScaleFactor',1,'Color',cmap(connT.indCol(i),:),'LineWidth',2 ...
-        ), 1:size(connT,1))
-    set(fig,'Name',figtitle);
-    if ~isempty(savepath)
-        print(fig,'-noui',spm_file(fnEdge,'suffix','_circ','ext','jpg'),'-djpeg','-r300');
-        close(fig);
-    end
-    
-    % BNV
-    mat = zeros(nROI,nROI);
-    for roi = unique(groupStat.labelcmb(:,1),'stable')'
-        roi1ind = find(strcmp(atlas.Var3,strrep(roi{1},' ','.')));
-        lcoi = strcmp(groupStat.labelcmb(:,1),roi{1});
-        [~, ~, roi2ind] = intersect(atlas.Var3,strrep(groupStat.labelcmb(lcoi,2),' ','.'),'stable');
-        meas = mean(stat(lcoi,boiind(1):boiind(2)),2); meas = meas(roi2ind);
-        if nROI > numel(meas)
-            mat(:,roi1ind) = [meas(1:roi1ind-1); 0; meas(roi1ind:end)]; % auto-connectivity
+    for f = 1:size(snapshotwoi,1)
+        if iscellstr(snapshotwoi)
+            boiind = [f f];
+            fnEdge = sprintf('%s_net_%s_%c.edge',savepath,snapshotwoi{f},dirStat);
         else
-            mat(:,roi1ind) = meas;
+            boiind = [find(freq >= snapshotwoi(f,1),1,'first') find(freq <= snapshotwoi(f,2),1,'last')];
+            fnEdge = sprintf('%s_net_%d-%d_%c.edge',savepath,snapshotwoi(f,:),dirStat);
         end
-        % mat(mat(:,roiind)<cmaprange(1)/2,roiind) = 0; % at least half of the band
+        
+        % Circular
+        % - select data
+        meas = mean(stat(:,boiind(1):boiind(2)),2); mask = logical(meas);
+        connT = table(string(groupStat.labelcmb(mask,:)), meas(mask),'VariableNames',{'conn' 'stat'});
+        step = (max(connT.stat)-min(connT.stat))/(size(cmap,1)-1);
+        if step == 0, connT.indCol(:) = round(size(cmap,1)/2);
+        else, connT.indCol = round((connT.stat-min(connT.stat))/step)+1; end
+        
+        % - plot atlas
+        fig = figure; set(fig,'Position',[0 0 1080 1080]);
+        hold on; set(gca,'visible','off'); axis image;
+        plot(circAtlas.x,circAtlas.y,'*')
+        arrayfun(@(i) text(circAtlas.x(i)-0.025, circAtlas.y(i), circAtlas.label{i}, 'HorizontalAlignment','right', 'Rotation', acosd(circAtlas.y(i)/5)-90), find(circAtlas.x<0))
+        arrayfun(@(i) text(circAtlas.x(i)+0.025, circAtlas.y(i), circAtlas.label{i}, 'HorizontalAlignment','left', 'Rotation', acosd(-circAtlas.y(i)/5)-90), find(circAtlas.x>0))
+        
+        % - plot data
+        arrayfun(@(i) quiver(...
+            circAtlas.x(circAtlas.label == connT.conn(i,1)),...
+            circAtlas.y(circAtlas.label == connT.conn(i,1)),...
+            circAtlas.x(circAtlas.label == connT.conn(i,2))-circAtlas.x(circAtlas.label == connT.conn(i,1)),...
+            circAtlas.y(circAtlas.label == connT.conn(i,2))-circAtlas.y(circAtlas.label == connT.conn(i,1)),...
+            'AutoScaleFactor',1,'Color',cmap(connT.indCol(i),:),'LineWidth',2 ...
+            ), 1:size(connT,1))
+        set(fig,'Name',figtitle);
+        if ~isempty(savepath)
+            print(fig,'-noui',spm_file(fnEdge,'suffix','_circ','ext','jpg'),'-djpeg','-r300');
+            close(fig);
+        end
+        
+        % BNV
+        mat = zeros(nROI,nROI);
+        for roi = unique(groupStat.labelcmb(:,1),'stable')'
+            roi1ind = find(strcmp(atlas.Var3,strrep(roi{1},' ','.')));
+            lcoi = strcmp(groupStat.labelcmb(:,1),roi{1});
+            [~, ~, roi2ind] = intersect(atlas.Var3,strrep(groupStat.labelcmb(lcoi,2),' ','.'),'stable');
+            meas = mean(stat(lcoi,boiind(1):boiind(2)),2); meas = meas(roi2ind);
+            if nROI > numel(meas)
+                mat(:,roi1ind) = [meas(1:roi1ind-1); 0; meas(roi1ind:end)]; % auto-connectivity
+            else
+                mat(:,roi1ind) = meas;
+            end
+            % mat(mat(:,roiind)<cmaprange(1)/2,roiind) = 0; % at least half of the band
+        end
+        if ~any(mat,'all') || isequal(mat,diag(diag(mat))), continue; end % empty or auto-connectivity (BNV cannot visualise) only
+        dlmwrite(fnEdge,mat,'\t');
+        inputfiles.edge = fnEdge;
+        fig = BrainNet(inputfiles,BNV.BNVSettings);
+        set(gca,'FontSize',16,'FontWeight','bold');
+        set(fig,'Name',figtitle);
+        if ~isempty(savepath)
+            print(fig,'-noui',spm_file(fnEdge,'ext','jpg'),'-djpeg','-r300');
+            close(fig);
+        end
+        if isempty(savepath), delete(fnEdge); end
+        
     end
-    if ~any(mat,'all') || isequal(mat,diag(diag(mat))), continue; end % empty or auto-connectivity (BNV cannot visualise) only
-    dlmwrite(fnEdge,mat,'\t');    
-    inputfiles.edge = fnEdge;  
-    fig = BrainNet(inputfiles,BNV.BNVSettings);
-    set(gca,'FontSize',16,'FontWeight','bold');
-    set(fig,'Name',figtitle);
-    if ~isempty(savepath)
-        print(fig,'-noui',spm_file(fnEdge,'ext','jpg'),'-djpeg','-r300');
-        close(fig);
-    end
-    if isempty(savepath), delete(fnEdge); end
-    
 end
 if isempty(savepath), delete(fnNode); end
 BNV.unload;
