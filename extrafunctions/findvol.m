@@ -32,11 +32,11 @@ SEARCHPATH = SEARCHPATH{1};
 % get subjname
 if ~isempty(regexp(subjectoutputformat,'%s', 'once')) % string input expected
     if ~ischar(subjpath)
-        aas_log(aap,true,'Second input must be a string. Check aap.directory_conventions.subjectoutputformat');
+        aas_log(aap,true,'Second input must be a string. Check aap.directory_conventions.(meeg)subjectoutputformat');
     end
 else  % numeric input expected
     if ~isnumeric(subjpath)
-        aas_log(aap,true,'Second input must be an integer. Check aap.directory_conventions.subjectoutputformat');
+        aas_log(aap,true,'Second input must be an integer. Check aap.directory_conventions.(meeg)subjectoutputformat');
     end
 end
 subjpath = sprintf(subjectoutputformat,subjpath);

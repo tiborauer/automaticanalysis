@@ -23,27 +23,70 @@
             <matlabtoolsdir desc="Path(s) to MATLAB tools (colon separated list)" ui="dir"></matlabtoolsdir>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>spm</name>
-                <dir ui='dir'>/usr/local/apps/spm12</dir>
+                <dir ui='dir'>/home/akk/tools/spm12</dir>
+            </toolbox>
+                        <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
+                <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>eeglab</name>
+                <dir ui='dir'>/home/akk/tools/eeglab</dir>
+                <extraparameters>
+                    <requiredPlugins>
+                        <name>EEG-BIDS</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>Fileio</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>bva-io</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>clean_rawdata</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>AMICA</name>
+                        <doPostprocess desc='replace amica15ex with amica15ub'>1</doPostprocess>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>dipfit</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>Fieldtrip-lite</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>firfilt</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>fitTwoDipoles</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>ICLabel</name>
+                    </requiredPlugins>
+                    <requiredPlugins>
+                        <name>Viewprops</name>
+                    </requiredPlugins>
+                </extraparameters>
+            </toolbox>         
+            <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
+                <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>fieldtrip</name>
+                <dir ui='dir'>/home/akk/tools/fieldtrip</dir>
             </toolbox>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
-                <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>bwt</name>
-                <dir ui='dir'>/usr/local/apps/BrainWavelet</dir>
+                <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>hcpwb</name>
+                <dir ui='dir'>/home/akk/tools/HCP-workbench</dir>
+                <extraparameters>
+                    <templateDir>/home/akk/tools/HCP-workbench/templates</templateDir>
+                </extraparameters>
             </toolbox>
             <linuxshell desc='Linux shell used to run linux commands' ui='text'>bash</linuxshell>
-            <fsldir desc='Path to fsl' ui='dir'>/usr/local/apps/fsl/fsl-6.0.1</fsldir>
-            <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'>/usr/local/apps/config/fsl_bash 6.0.1</fslsetup>
+            <fsldir desc='Path to fsl' ui='dir'>/home/akk/tools/fsl</fsldir>
+            <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'>/home/akk/tools/config/fsl_bash</fslsetup>
             <fslshell desc='Shell used to run FSL' ui='text'>bash</fslshell>
             <fsloutputtype desc='Output type used by FSL' ui='text'>NIFTI</fsloutputtype>
-            <freesurferdir desc='Path to freesurfer' ui='dir'>/usr/local/apps/freesurfer/freesurfer-6.0.1</freesurferdir>        
+            <freesurferdir desc='Path to freesurfer' ui='dir'>/home/akk/tools/freesurfer</freesurferdir>        
             <freesurfershell desc='Shell used to run FreeSurfer' ui='text'>bash</freesurfershell>
             <freesurfersetup desc='Path to FreeSurfer setup script, executing before any FreeSurfer command' ui='text'></freesurfersetup>
-            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>/usr/local/apps/freesurfer/freesurfer-6.0.1/FreeSurferEnv.sh;</freesurferenvironment>
-            <templatedir desc='Path to folder with various templates (e.g. for aamod_freesurfer_deface)' ui='dir'>/usr/local/apps/psycapps/templates</templatedir>
-            <GIFTdir desc='Path to GIFT toolbox' ui='dir'>/usr/local/apps/spm_toolboxes/GroupICATv4.0b</GIFTdir>
-            <DCMTKdir desc='Path to DICOM Toolkit' ui='dir'>/usr/local/apps/dcmtk</DCMTKdir>
-            <FaceMaskingdir desc='Path to FaceMasking (WUSTL NRG)' ui='dir'>/usr/local/apps/FaceMasking</FaceMaskingdir>
+            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>//home/akk/tools/freesurfer/FreeSurferEnv.sh;</freesurferenvironment>
             <allowremotecache desc='Allow local caching of files from remote server' ui='optionlist'>1</allowremotecache>
-            <poolprofile desc='Cluster Profile and (optional) initial submit argument (e.g. asking for specific queue or resource) separated with colon' ui='text'>local</poolprofile>
+            <poolprofile desc='Cluster Profile and (optional) initial submit argument (e.g. asking for specific queue or resource) separated with colon' ui='text'>Processes</poolprofile>
             <mailerserver desc='E-mail address and password (colon-sepertated) for the mailer account for sending notifications' ui='text'>aamailer.akk@gmail.com:aamailer@89</mailerserver>
         </directory_conventions>
         <options>

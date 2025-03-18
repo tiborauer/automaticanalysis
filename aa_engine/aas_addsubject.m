@@ -40,7 +40,7 @@ function aap = aas_addsubject(aap, varargin)
 %                   for whole-brain EPI: string containing a full or relative path (from the subject's dir). Can be specified only after fMRI series.
 %                   for 3D NIfTI: cell array (i.e. nested) of strings of full path
 %                 Strings can be replaced by structures with fields 'fname' (path to image) and 'hdr' (path to header) to specify metadata.
-%               - for MEEG: full or relative filename of the acquisition file in the subject folder
+%               - for MEEG: relative filename of the acquisition file in the subject folder
 % Series have to be specified in the same order as the corresponding sessions have been added in the UMS. Missing series can be specified either with "0" (for numerical array input) or with "[]" (for cell array input).
 %
 %
