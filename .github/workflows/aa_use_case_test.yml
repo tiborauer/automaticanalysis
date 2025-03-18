@@ -94,14 +94,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_dartel','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds000114_dartel
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -181,14 +181,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_diffusion','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds000114_diffusion
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -270,14 +270,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_fmrisymlinks','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds000114_fmrisymlinks
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -359,14 +359,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_fmrilocalpipeline','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds000114_fmrilocalpipeline
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -449,14 +449,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds000114_scrubbing','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds000114_scrubbing
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -534,14 +534,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_ds002737_deface','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_ds002737_deface
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -624,14 +624,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_lemon_meegsensor','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -710,14 +710,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_lemon_meegsource','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: aatest_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |

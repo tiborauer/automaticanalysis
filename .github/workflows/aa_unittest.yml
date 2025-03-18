@@ -87,14 +87,14 @@ jobs:
           AWS_EC2_METADATA_DISABLED: true
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: data_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
@@ -166,14 +166,14 @@ jobs:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('haltonerror', true, 'tags', {'Minimal_install'}); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: data_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact
+        uses: actions/upload-artifact@v4.6.1
         with:
           name: testlog_${{github.job}}
           path: |
