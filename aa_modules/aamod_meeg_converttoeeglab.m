@@ -72,7 +72,7 @@ switch task
                     ind = e.type;
                 end
                 op = strsplit(e.operation,':');
-                if ~any(ind) && ~strcmp(op{1},'insert'), continue; end
+                if ~any(ind) && ~startsWith(op{1},'insert'), continue; end
                 switch op{1}
                     case 'remove'
                         EEG.event(ind) = [];
@@ -119,6 +119,24 @@ switch task
                         events = [events newE(i+1) EEG.event(loc(i+1):end)];
                         EEG.event = events;
                         EEG.urevent = rmfield(events,'urevent');
+                    case 'inserteachbetween'
+                        ind_start = find(strcmp({EEG.event.type},op{2}),1,'first');
+                        ind_end = find(strcmp({EEG.event.type},op{4}),1,'last');
+                        latencies = EEG.event(ind_start).latency:str2num(op{3})*EEG.srate:EEG.event(ind_end).latency;
+                        latencies(1) = latencies(1)+1; % first sample after start
+                        if latencies(end) == EEG.event(ind_end).latency, latencies(end) = latencies(end)-1; end % last sample before end if overlap
+                        for lat = latencies
+                            EEG.event(end+1) = struct('type',e.type,...
+                                                      'duration',EEG.srate/1000,...
+                                                      'timestamp',[],...
+                                                      'latency',lat,...
+                                                      'urevent',[]);
+                        end
+                        EEG.event(strcmp({EEG.event.type},'empty')) = [];
+                        [~, ord] = sort([EEG.event.latency]);
+                        EEG.event = EEG.event(ord);                        
+                        for i = 1:numel(EEG.event), EEG.event(i).urevent = i; end
+                        EEG.urevent = rmfield(EEG.event,'urevent');
                     case 'ignorebefore'
                         EEG = pop_select(EEG,'nopoint',[0 EEG.event(ind(1)).latency-1]);
                         beInd = find(strcmp({EEG.event.type},'boundary'),1,'first');

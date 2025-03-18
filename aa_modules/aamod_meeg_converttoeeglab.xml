@@ -23,6 +23,7 @@
                     'rename:<new type>' - rename event(s) to <new type>
                     'iterate' - add suffix to recurring event to indicate the number of occurrence
                     'insert:[<array of indices>] - insert event before the locations specified by <array of indices> with timings of the events at the locations'
+                    'inserteachbetween:<start event>:<step in sec>:<end event>' - insert events at each <step in sec> between <start event> and <end event>
                     'ignorebefore' - remove heading data before the first occurence (excluding the event)
                     'ignoreafter' - remove trailig data after the last occurence (including the event)
             -->
