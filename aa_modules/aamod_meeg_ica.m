@@ -62,8 +62,7 @@ switch task
         end
 
         % check output
-        [res,EEG] = evalc('eeg_checkset(EEG,''ica'')');
-        if ~isempty(res) && aas_getsetting(aap,'errorOnFailedCheck'), aas_log(aap,true,res); end
+        if aas_getsetting(aap,'errorOnFailedCheck') && isempty(EEG.icaweights), aas_log(aap,true,res); end
         
         % save
         outfname = spm_file(infname,'prefix','ica_');

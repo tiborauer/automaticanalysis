@@ -11,7 +11,7 @@ switch task
         for sfx = {'accepted','rejected'}
             aap = aas_report_add(aap,subj,'<td valign="top">');
             for fn = cellstr(spm_select('FPList',aas_getsesspath(aap,subj,sess),['^diagnostic_.*' sfx{1} '.*jpg$']))'
-                aap=aas_report_addimage(aap,subj,fn{1});
+                if ~isempty(fn{1}), aap=aas_report_addimage(aap,subj,fn{1}); end
             end
             aap = aas_report_add(aap,subj,'</td>');
         end
