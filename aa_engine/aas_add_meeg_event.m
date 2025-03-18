@@ -1,16 +1,22 @@
-function aap=aas_add_meeg_event(aap,modulename,subject,session,eventname,eventdef,trialshift)
+function aap=aas_add_meeg_event(aap,modulename,subject,session,eventname,eventdef,trialshift,eventwindow,baselinewindow)
 % Op.1a.: Using onsets from data --> may multiple calls per subject/session
-%     argument 5 (eventname)    - conditionlabel
-%     argument 6 (eventvalue)   - eventvalue
-%     argument 7 (trialshift)   - trlshift (must not be empty!!!)
+%     argument 5 (eventname)      - conditionlabel
+%     argument 6 (eventvalue)     - eventvalue
+%     argument 7 (trialshift)     - trlshift (must not be empty!!!)
+%     argument 8 (eventwindow)    - eventwindow ([1x2] array; in ms; must not be empty!!!)
+%     argument 9 (baselinewindow) - eventwindow ([1x2] array; in ms; can be empty)
 % Op.1b.: Using onsets from data with eventtype specified --> may multiple calls per subject/session
 %     argument 5 (eventname)                    - conditionlabel
 %     argument 6 (evenettype and eventvalue)    - {evenettype eventvalue}
 %     argument 7 (trialshift)                   - trlshift (must not be empty!!!)
+%     argument 8 (eventwindow)                  - eventwindow ([1x2] array; in ms; must not be empty!!!)
+%     argument 9 (baselinewindow)               - eventwindow ([1x2] array; in ms; can be empty)
 % Op.2.: Using user-specific onsets --> single call per subject/session
-%     argument 5 (eventname)    - conditionlabels or empty if provided in mat-file along with trl
-%     argument 6 (eventvalue)   - trl matrix or mat-file containing trl (and conditionlabels)
-%     argument 7 (trialshift)   - [] or unspecified
+%     argument 5 (eventname)      - conditionlabels or empty if provided in mat-file along with trl
+%     argument 6 (eventvalue)     - trl matrix or mat-file containing trl (and conditionlabels)
+%     argument 7 (trialshift)     - []
+%     argument 8 (eventwindow)    - eventwindow ([1x2] array; in ms; must not be empty!!!)
+%     argument 9 (baselinewindow) - eventwindow ([1x2] array; in ms; can be empty)
 % Op.3.: Segment data using onsets from data --> may multiple calls per subject/session
 %     argument 5 (eventname)    - 'segment-<segmentlabel>'
 %     argument 6 (eventvalue)   - '<eventvalue>:<eventvalue>' or [1x2] array of sample numbers
@@ -41,22 +47,26 @@ elseif ~isempty(m3)
 else
     moduleindex = 1;
 end
-
-if nargin < 7, trialshift = []; end % onset from user
-event.conditionlabel = eventname;
-event.trlshift = trialshift;
-event.eventtype = [];
+event = struct('conditionlabel',eventname,...
+               'trlshift',trialshift,...
+               'eventtype', [],...
+               'eventwindow',[],...
+               'baselinewindow',[]);
 if iscell(eventdef) % specify eventtype
     event.eventtype = eventdef{1};
     event.eventvalue = eventdef{2};
 else
     event.eventvalue = eventdef;
 end
+if ~startsWith(event.conditionlabel,'segment')
+    event.eventwindow = eventwindow;
+    event.baselinewindow = baselinewindow;
+end
 
 % segment definition
 if find(strcmp(strsplit(event.conditionlabel,'-'),'segment'),1,'first') == 1
-    if numel(event.trlshift) < 2 || ~any(event.trlshift)
-        aas_log(aap,false,'Segment definition requires trialshift specified as 1x2 array of non-zero values -> default [2 -2] will be applied');
+    if numel(event.trlshift) < 2
+        aas_log(aap,false,'Segment definition requires trialshift specified as 1x2 array of non-zero values to avoid overlap -> default [2 -2] will be applied');
         event.trlshift = [2 -2];
     end    
 end

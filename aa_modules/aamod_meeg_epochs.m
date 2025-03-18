@@ -232,15 +232,22 @@ switch task
             eventdef(indSegmentDefiniftion) = [];
         end
         
-        % detect trialnumber
+        % process events
         condfn = '';
-        for e = eventdef
-            condfn = sprintf('%s_%s-%d',condfn,e.conditionlabel,get_eventvalue(e.eventvalue));
-        end
-        
-        % timewindow
-        if ~isempty(eventdef)
-            timewindow = (aas_getsetting(aap,'timewindow')+eventdef(1).trlshift)/1000; % in seconds (assume same trlshift for each event)
+        for e = 1:numel(eventdef)
+            % detect trialnumber
+            condfn = sprintf('%s_%s-%d',condfn,eventdef(e).conditionlabel,get_eventvalue(eventdef(e).eventvalue));
+            if e == 1
+                % adjust event window
+                eventdef(e).eventwindow = (eventdef(e).eventwindow + eventdef(e).trlshift)/1000; % in seconds
+                % set baseline correction wondow
+                if ~isempty(eventdef(e).baselinewindow) && isnumeric(eventdef(e).baselinewindow)
+                    eventdef(e).baselinewindow = eventdef(e).baselinewindow + eventdef(e).trlshift; % in milliseconds
+                end
+            else
+                aas_log(aap,false,['WARNING: timewindow and baselinewindow are exected to be consistent across events\n\t'...
+                    '-> only those of the first event will be considered']);
+            end
         end
         
         % data rejection, correct events if rejection happens together with an event
@@ -250,12 +257,6 @@ switch task
         if isempty(segmentdef)
             segmentdef.eventvalue = 'begin:end';
             segmentdef.trlshift = [2 -2];
-        end
-        
-        % baseline correction
-        baswin = aas_getsetting(aap,'baselinewindow');
-        if ~isempty(baswin)
-            if isnumeric(baswin), baswin = baswin+eventdef(1).trlshift; end
         end
         
         datafn = {};
@@ -293,17 +294,17 @@ switch task
             
             % epoch
             if ~isempty(eventdef)
-                epochEEG = pop_epoch(segEEG,{eventdef.eventvalue},timewindow);
+                epochEEG = pop_epoch(segEEG,{eventdef.eventvalue},eventdef(1).eventwindow);
             else
                 epochEEG = segEEG;
             end
                         
             % baseline correction
-            if ~isempty(baswin)
-                if isnumeric(baswin)
-                    epochEEG = pop_rmbase(epochEEG,baswin);
+            if ~isempty(eventdef(1).baselinewindow)
+                if isnumeric(eventdef(1).baselinewindow)
+                    epochEEG = pop_rmbase(epochEEG,eventdef(1).baselinewindow);
                 else
-                    switch baswin
+                    switch eventdef(1).baselinewindow
                         case 'all'
                             epochEEG = pop_rmbase(epochEEG,[]);
                         otherwise
