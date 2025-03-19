@@ -82,12 +82,11 @@ switch task
             conSessionsBand = cell(1,numel(m.session.names));
             
             % process sessions
-            includedsessionnumbers = cellfun(@(x) find(strcmp({aap.acq_details.meeg_sessions.name},x)),m.session.names);
-            for sess = 1:numel(includedsessionnumbers)
-                sessnum = (includedsessionnumbers(sess));
-                
+            sess_in_model = cellfun(@(x) find(strcmp({aap.acq_details.meeg_sessions.name},x)),m.session.names);
+            for sess = sess_in_model
+               
                 clear data
-                meegfn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sessnum],'meeg'));
+                meegfn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
                 switch spm_file(meegfn{1},'ext')
                     case 'mat'
                         filetype = 'fieldtrip';
@@ -324,18 +323,18 @@ switch task
                     
                     % append to stream
                     outputFn = {};
-                    outstreamFn = aas_getoutputstreamfilename(aap,'meeg_session',[subj, sessnum],estim{1});
+                    outstreamFn = aas_getoutputstreamfilename(aap,'meeg_session',[subj, sess],estim{1});
                     if exist(outstreamFn,'file')
-                        outputFn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj, sessnum],estim{1},'output'));
+                        outputFn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj, sess],estim{1},'output'));
                     end
                     outputFn{end+1} = timefreqFn;
                     aap = aas_desc_outputs(aap,'meeg_session',[subj,sess],estim{1},outputFn);
                     
                     switch estim{1}
                         case 'timefreq'
-                            conSessionsFreq{sess} = timefreq;
+                            conSessionsFreq{sess==sess_in_model} = timefreq;
                         case 'timeband'
-                            conSessionsBand{sess} = timefreq;
+                            conSessionsBand{sess==sess_in_model} = timefreq;
                     end
                 end
 
