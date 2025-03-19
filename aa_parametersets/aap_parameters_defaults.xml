@@ -54,6 +54,7 @@
         <freesurfersetup desc='Path to FreeSurfer setup script, executing before any FreeSurfer command' ui='text'></freesurfersetup>
         <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'></freesurferenvironment>
         <neuromagdir desc='Path to Neuromag' ui='dir'></neuromagdir>
+        <condasetup desc="Path to conda setup script, executing before any Python command, see help runPyCommand" ui="text"></condasetup>
         <GIFTdir desc='Path to GIFT toolbox' ui='dir'></GIFTdir>
         <condorwrapper desc='Command to run a job within condor' ui='dir'></condorwrapper>
         <templatedir desc='Path to folder with various templates (e.g. for aamod_freesurfer_deface)' ui='dir'></templatedir>

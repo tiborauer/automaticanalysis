@@ -70,6 +70,10 @@
                 <dir ui='dir'>/home/akk/tools/fieldtrip</dir>
             </toolbox>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
+                <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>fooof</name>
+                <dir ui='dir'>/home/akk/tools/miniconda/envs/fooof</dir>
+            </toolbox>
+            <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>hcpwb</name>
                 <dir ui='dir'>/home/akk/tools/HCP-workbench</dir>
                 <extraparameters>
@@ -84,7 +88,8 @@
             <freesurferdir desc='Path to freesurfer' ui='dir'>/home/akk/tools/freesurfer</freesurferdir>        
             <freesurfershell desc='Shell used to run FreeSurfer' ui='text'>bash</freesurfershell>
             <freesurfersetup desc='Path to FreeSurfer setup script, executing before any FreeSurfer command' ui='text'></freesurfersetup>
-            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>//home/akk/tools/freesurfer/FreeSurferEnv.sh;</freesurferenvironment>
+            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>/home/akk/tools/freesurfer/FreeSurferEnv.sh;</freesurferenvironment>
+			<condasetup desc="Path to conda setup script, executing before any Python command, see help runPyCommand" ui="text">/home/akk/tools/config/conda_bash.sh</condasetup>            
             <allowremotecache desc='Allow local caching of files from remote server' ui='optionlist'>1</allowremotecache>
             <poolprofile desc='Cluster Profile and (optional) initial submit argument (e.g. asking for specific queue or resource) separated with colon' ui='text'>Processes</poolprofile>
             <mailerserver desc='E-mail address and password (colon-sepertated) for the mailer account for sending notifications' ui='text'>aamailer.akk@gmail.com:aamailer@89</mailerserver>
