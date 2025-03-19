@@ -16,9 +16,9 @@ switch task
         
         % init summary
         if subj == 1
-            aap.report.(mfilename).trl{1} = zeros(aas_getN_bydomain(aap,'subject'),aas_getN_bydomain(aap,'session',1),numel(outfname),0,numel(conds));
-            aap.report.(mfilename).trl{2} = zeros(aas_getN_bydomain(aap,'subject'),aas_getN_bydomain(aap,'session',1),numel(outfname),0,numel(conds));
-            aap.report.(mfilename).condcount = nan(aas_getN_bydomain(aap,'subject'),aas_getN_bydomain(aap,'session',1),numel(outfname),numel(conds));
+            aap.report.(mfilename).trl{1} = zeros(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),0,numel(conds));
+            aap.report.(mfilename).trl{2} = zeros(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),0,numel(conds));
+            aap.report.(mfilename).condcount = nan(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),numel(conds));
         end
         
         %% Individual
@@ -87,6 +87,7 @@ switch task
             aap = aas_report_add(aap,subj,'</tr>');
         end
         aap = aas_report_add(aap,subj,'</table>');
+        condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
         aap.report.(mfilename).condcount(subj,sess,:,:) = condcount;
         
         %% Summary in case of more subjects
@@ -105,7 +106,7 @@ switch task
             end
             
             aap = aas_report_add(aap,'er','<td valign="top">');
-            aap = aas_report_add(aap,'er',['<h3>Session: ' aap.acq_details.sessions(sess).name '</h3>']);
+            aap = aas_report_add(aap,'er',['<h3>Session: ' aap.acq_details.meeg_sessions(sess).name '</h3>']);
             
             % Boxplot for each condition
             jitter = 0.1; % jitter around position
