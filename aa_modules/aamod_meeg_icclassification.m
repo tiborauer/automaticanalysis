@@ -67,10 +67,10 @@ switch task
         end
 
         
-        % Plot rejected components
+        % Plot components
         sfx = {'rejected' 'accepted'};
         for ic = 1:size(EEG.icaweights,1)
-            f = pop_prop_extended(EEG, 0, ic, NaN, {}, {}, 0, aas_getsetting(aap,'method'));
+            f = pop_prop_extended(EEG, 0, ic, NaN, {'freqrange' aas_getsetting(aap,'diagnostics.freqrange')}, {}, 0, aas_getsetting(aap,'method'));
             set(f,'PaperPositionMode','auto');
             print(f,'-noui',fullfile(aas_getsesspath(aap,subj,sess),sprintf('diagnostic_%s_%s_IC%03d.jpg',mfilename,sfx{any(finalIcIdx==ic)+1},ic)),'-djpeg','-r300');
             close(f);
