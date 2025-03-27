@@ -43,8 +43,8 @@ switch task
         end
         
         % downsample
-        if ~isempty(aas_getsetting(aap,'downsample'))
-            sRate = aas_getsetting(aap,'downsample');
+        if ~isempty(aas_getsetting(aap,'downsample',sess)) && ~isnan(aas_getsetting(aap,'downsample',sess))
+            sRate = aas_getsetting(aap,'downsample',sess);
             if sRate ~= EEG.srate, EEG = pop_resample( EEG, aas_getsetting(aap,'downsample')); end
         end
         
@@ -58,7 +58,7 @@ switch task
         toEdit = struct('type',{},'operation',{});
         for s = 1:numel(toEditsubj)
             sessnames = regexp(toEditsubj(s).session,':','split');
-            if any(strcmp(sessnames,aas_getsessname(aap,sess))) || sessnames{1} == '*'
+            if any(strcmp(sessnames,aas_getsessname(aap,sess))) || strcmp(sessnames{1}, '*')
                 toEdit = horzcat(toEdit,toEditsubj(s).event);
             end
         end
@@ -119,6 +119,19 @@ switch task
                         events = [events newE(i+1) EEG.event(loc(i+1):end)];
                         EEG.event = events;
                         EEG.urevent = rmfield(events,'urevent');
+                    case 'insertwithlatency'
+                        newE = struct(...
+                            'type',e.type,...
+                            'duration',1,...
+                            'timestamp',[],...
+                            'latency',num2cell(str2num(op{2})),...
+                            'urevent',0 ...
+                            );
+                        EEG.event = [EEG.event newE];
+                        [~, ord] = sort([EEG.event.latency]);
+                        EEG.event = EEG.event(ord);                        
+                        for i = 1:numel(EEG.event), EEG.event(i).urevent = i; end
+                        EEG.urevent = rmfield(EEG.event,'urevent');
                     case 'inserteachbetween'
                         ind_start = find(strcmp({EEG.event.type},op{2}),1,'first');
                         ind_end = find(strcmp({EEG.event.type},op{4}),1,'last');
