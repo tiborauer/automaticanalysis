@@ -127,6 +127,7 @@ switch task
                             'latency',num2cell(str2num(op{2})),...
                             'urevent',0 ...
                             );
+                        if ~isfield(EEG.event,'timestamp'), newE = rmfield(newE,'timestamp'); end
                         EEG.event = [EEG.event newE];
                         [~, ord] = sort([EEG.event.latency]);
                         EEG.event = EEG.event(ord);                        
