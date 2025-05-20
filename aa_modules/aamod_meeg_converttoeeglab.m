@@ -45,7 +45,7 @@ switch task
         % downsample
         if ~isempty(aas_getsetting(aap,'downsample',sess)) && ~isnan(aas_getsetting(aap,'downsample',sess))
             sRate = aas_getsetting(aap,'downsample',sess);
-            if sRate ~= EEG.srate, EEG = pop_resample( EEG, aas_getsetting(aap,'downsample')); end
+            if sRate ~= EEG.srate, EEG = pop_resample( EEG, aas_getsetting(aap,'downsample',sess)); end
         end
         
         % edit
