@@ -180,11 +180,10 @@ for k = stageindices
 end
 
 % Close files
-aap = aas_report_add(aap,[],'EOF');
-aap = aas_report_add(aap,0,'EOF');
 for subj = 1:aas_getN_bydomain(aap,'subject')
     aap = aas_report_add(aap,subj,'EOF');
 end
+aap = aas_report_add(aap,0,'EOF');
 if has_motioncorrection, aap = aas_report_add(aap,'moco','EOF'); end
 if has_registration, aap = aas_report_add(aap,'reg','EOF'); end
 if has_firstlevel
@@ -195,6 +194,7 @@ if has_firstlevel
     end
 end
 if has_meegepochs, aap = aas_report_add(aap,'er','EOF'); end
+aap = aas_report_add(aap,[],'EOF');
 
 % Provenance
 aap.prov.serialise(studyroot);

@@ -6,7 +6,7 @@ switch task
     case 'report'
         [~, EL] = aas_cache_get(aap,'eeglab');
         [~, FT] = aas_cache_get(aap,'fieldtrip');
-        
+
         MAXNTRIAL=1000; % do not expect more than 1000 trials
         
         outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg','output'));
@@ -15,24 +15,32 @@ switch task
         condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);
         
         % init summary
-        if subj == 1
-            aap.report.(mfilename).trl{1} = zeros(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),0,numel(conds));
-            aap.report.(mfilename).trl{2} = zeros(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),0,numel(conds));
-            aap.report.(mfilename).condcount = nan(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions),numel(outfname),numel(conds));
+        % - first session
+        if ~isfield(aap.report, mfilename)
+            aap.report.(mfilename).trl{1} = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions)); % combined trialnumber
+            aap.report.(mfilename).trl{2} = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions)); % specific trialnumber
+            aap.report.(mfilename).condcount = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
         end
+        % - new subject/session
+        aap.report.(mfilename).trl{1}{subj,sess} = zeros(numel(outfname),0,numel(conds));
+        aap.report.(mfilename).trl{2}{subj,sess} = zeros(numel(outfname),0,numel(conds));
+        aap.report.(mfilename).condcount{subj,sess} = nan(numel(outfname),numel(conds));
         
         %% Individual
         % plot
         sfxPlot = {'specific' 'combined'};
-
-        if subj == 1, EL.load;
-        else, EL.reload; end
+        switch EL.status
+            case 'defined', EL.load;
+            case 'unloaded', EL.reload;
+        end 
         for d = 1:numel(outfname)
             EEG(d) = pop_loadset('filepath',spm_file(outfname{d},'path'),'filename',spm_file(outfname{d},'filename'));
         end
         EL.unload;
-        if subj == 1, FT.load;
-        else, FT.reload; end
+        switch FT.status
+            case 'defined', FT.load;
+            case 'unloaded', FT.reload;
+        end 
         for d = 1:numel(outfname)
             % remove unwanted events because they may confound the conversion
             EOI = arrayfun(@(x) any(condnum==x), cellfun(@(x) get_eventvalue(x), {EEG(d).event.type}));
@@ -67,7 +75,7 @@ switch task
                 close(f);
             end
             aap=aas_report_addimage(aap,subj,fn);
-            aap.report.(mfilename).trl{t}(subj,sess,1:size(trl,1),1:size(trl,2),1:size(trl,3)) = ~isnan(trl);
+            aap.report.(mfilename).trl{t}{subj,sess} = ~isnan(trl);
         end
         
         % table
@@ -81,17 +89,36 @@ switch task
             aap = aas_report_add(aap,subj,'<tr>');
             aap = aas_report_add(aap,subj,sprintf('<td>%s</td>',spm_file(outfname{d},'basename')));
             for c = 1:numel(conds)
-                condcount(d,c) = sum(aap.report.aamod_meeg_epochs.trl{1}(subj,sess,d,:,c));
+                condcount(d,c) = sum(aap.report.aamod_meeg_epochs.trl{1}{subj,sess}(d,:,c));
                 aap = aas_report_add(aap,subj,sprintf('<td>%d</td>',condcount(d,c)));
             end
             aap = aas_report_add(aap,subj,'</tr>');
         end
         aap = aas_report_add(aap,subj,'</table>');
         condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
-        aap.report.(mfilename).condcount(subj,sess,:,:) = condcount;
+        aap.report.(mfilename).condcount{subj,sess}(:,:) = condcount;
         
         %% Summary in case of more subjects
         if (subj > 1) && (subj == numel(aap.acq_details.subjects)) % last subject
+            % missing data
+            % - trl
+            for t = 1:2
+                % -- data size based on full data
+                dnd = cellfun(@ndims, aap.report.(mfilename).trl{t}(:,sess));
+                sel = dnd == max(dnd);
+                ds = max(cell2mat(cellfun(@size, aap.report.(mfilename).trl{t}(sel,sess), 'UniformOutput',false)));
+                for dsubj = 1:size(aap.report.(mfilename).trl{t},1)
+                    trl = aap.report.(mfilename).trl{t}{dsubj,sess};
+                    aap.report.(mfilename).trl{t}{dsubj,sess} = zeros(ds);
+                    aap.report.(mfilename).trl{t}{dsubj,sess}(1:size(trl,1),1:size(trl,2),1:size(trl,3)) = trl;
+                end
+            end
+
+            % - condcount
+            isMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(mfilename).condcount(:,sess));
+            ds = size(aap.report.(mfilename).condcount{find(~isMissing,1,'first'),sess});
+            aap.report.(mfilename).condcount(isMissing,sess) = {nan(ds)};
+
             [~, iSess] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,subj);
             firstSess = iSess(1);
             lastSess = iSess(end);
@@ -111,28 +138,29 @@ switch task
             % Boxplot for each condition
             jitter = 0.1; % jitter around position
             jitter = (...
-                1+(rand(size(aap.report.(mfilename).condcount,[1 3]))-0.5) .* ...
-                repmat(jitter*2./[1:size(aap.report.(mfilename).condcount,3)],size(aap.report.(mfilename).condcount,1),1)...
+                1+(rand([size(aap.report.(mfilename).condcount,1),size(aap.report.(mfilename).condcount{subj,sess},1)])-0.5) .* ...
+                repmat(jitter*2./[1:size(aap.report.(mfilename).condcount{subj,sess},1)],size(aap.report.(mfilename).condcount,1),1)...
                 ) .* ...
-                repmat([1:size(aap.report.(mfilename).condcount,3)],size(aap.report.(mfilename).condcount,1),1);
+                repmat([1:size(aap.report.(mfilename).condcount{subj,sess},1)],size(aap.report.(mfilename).condcount,1),1);
             condcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_conditioncount.jpg']);
             condcountFig = figure;
             trialcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_trialcount.jpg']);
             trialcountFig = figure;
-            for c = 1:size(aap.report.(mfilename).condcount,4)
-                figure(condcountFig); ax = subplot(1,size(aap.report.(mfilename).condcount,4),c); hold on;
-                boxplot(squeeze(aap.report.(mfilename).condcount(:,sess,:,c)),...
+            for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2)
+                figure(condcountFig); ax = subplot(1,size(aap.report.(mfilename).condcount{subj,sess},2),c); hold on;
+                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(mfilename).condcount(:,sess), 'UniformOutput', false)')',...
                     'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(mfilename).condcount,3), 'UniformOutput', false));
-                for s = 1:size(aap.report.(mfilename).condcount,3)
-                    scatter(jitter(:,s),squeeze(aap.report.(mfilename).condcount(:,sess,s,c)),'k','filled','MarkerFaceAlpha',0.4);
+                for s = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
+                    scatter(jitter(:,s),cellfun(@(cc) cc(s,c), aap.report.(mfilename).condcount(:,sess)),'k','filled','MarkerFaceAlpha',0.4);
                 end
                 boxValPlot{c} = getappdata(getappdata(gca,'boxplothandle'),'boxvalplot');
                 title(ax,['# condition: ' conds{c}]);
                 
                 figure(trialcountFig);
                 for t = 1:2 % combined and specific trialnumber
-                    ax = subplot(2,size(aap.report.(mfilename).condcount,4),(t-1)*size(aap.report.(mfilename).condcount,4)+c);
-                    trl = squeeze(sum(aap.report.(mfilename).trl{t}(:,sess,:,:,c),1));
+                    ax = subplot(2,size(aap.report.(mfilename).condcount{subj,sess},2),(t-1)*size(aap.report.(mfilename).condcount{subj,sess},2)+c);
+                    tmp = cellfun(@(trl) trl(:,:,c), aap.report.(mfilename).trl{t}(:,sess), 'UniformOutput', false);
+                    trl = squeeze(shiftdim(cat(3,tmp{:}),2));
                     rangeTRL = [min(trl(:)) max(trl(:))];
                     im = image(trl-rangeTRL(1)+1);
                     im.Parent.FontSize = 12;
@@ -155,16 +183,16 @@ switch task
             % Stat table
             aap = aas_report_add(aap,'er','<table id="data"><tr>');
             aap = aas_report_add(aap,'er','<th>Segment</th>');
-            for c = 1:size(aap.report.(mfilename).condcount,4) % for each condition
+            for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2) % for each condition
                 if ~isempty(strfind(conds{c},'seg-')), continue; end
                 aap = aas_report_add(aap,'er',sprintf('<th>%s [median (IQR)]</th>',conds{c}));
                 aap = aas_report_add(aap,'er',sprintf('<th>Outliers</th>'));
             end
             aap = aas_report_add(aap,'er','</tr>');
-            for d = 1:size(aap.report.(mfilename).condcount,3)
+            for d = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
                 aap = aas_report_add(aap,'er','<tr>');
                 aap = aas_report_add(aap,'er',sprintf('<td>%s</td>',spm_file(outfname{d},'basename')));
-                for c = 1:size(aap.report.(mfilename).condcount,4) % for each condition
+                for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2) % for each condition
                     if ~isempty(strfind(conds{c},'seg-')), continue; end
                     aap = aas_report_add(aap,'er',sprintf('<td>%3.3f (%3.3f)</td>',boxValPlot{c}(d,:).q2,boxValPlot{c}(d,:).q3-boxValPlot{c}(d,:).q1));
                     subjstr = ' None';
@@ -185,9 +213,13 @@ switch task
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
         
         [~, SPMtool] = aas_cache_get(aap,'spm');
-        SPMtool.load;
         [~, EL] = aas_cache_get(aap,'eeglab');
-        EL.load;
+        for tbx = {SPMtool EL}
+            switch tbx{1}.status
+                case 'defined', tbx{1}.load;
+                case 'unloaded', tbx{1}.reload;
+            end                
+        end
         
         EEGLABFILE = infname{strcmp(spm_file(infname,'ext'),'set')};
         EEG = pop_loadset('filepath',spm_file(EEGLABFILE,'path'),'filename',spm_file(EEGLABFILE,'filename'));
