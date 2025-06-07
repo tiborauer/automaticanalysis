@@ -52,21 +52,21 @@ jobs:
           git config --global core.eol lf
 
       - name: Check out repository under $GITHUB_WORKSPACE
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.12.11
+        uses: actions/setup-python@v5
         with:
           # Semantic version range syntax or exact version of a Python version
-          python-version: '3.6'
+          python-version: '3.12.11'
           # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v1
+        uses: matlab-actions/setup-matlab@v2
         with:
-          # MATLAB release to set up R2020a
-          release: R2020a
+          # MATLAB release to set up R2024a
+          release: R2024a
 
       - name: Install tools and configure aa
         run: |
@@ -78,7 +78,7 @@ jobs:
           PARAMETER_XML: aap_parameters_defaults_GitHub.xml
 
       - name: Run script
-        uses: matlab-actions/run-command@v1
+        uses: matlab-actions/run-command@v2
         with:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('haltonerror', true, 'not_tags', {'Large'}); aa_test_getreport('/test/projects','/test/projects/report')
         env:
@@ -87,14 +87,14 @@ jobs:
           AWS_EC2_METADATA_DISABLED: true
 
       - name: Archive data
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v4
         with:
           name: data_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v4
         with:
           name: testlog_${{github.job}}
           path: |
@@ -134,21 +134,21 @@ jobs:
           git config --global core.eol lf
 
       - name: Check out repository under $GITHUB_WORKSPACE
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.12.11
+        uses: actions/setup-python@v5
         with:
           # Semantic version range syntax or exact version of a Python version
-          python-version: '3.6'
+          python-version: '3.12.11'
           # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v1
+        uses: matlab-actions/setup-matlab@v2
         with:
-          # MATLAB release to set up R2020a
-          release: R2020a
+          # MATLAB release to set up R2024a
+          release: R2024a
 
       - name: Install tools and configure aa
         run: |
@@ -161,19 +161,19 @@ jobs:
           PARAMETER_XML: aap_parameters_defaults_GitHub_minimal.xml
 
       - name: Run script
-        uses: matlab-actions/run-command@v1
+        uses: matlab-actions/run-command@v2
         with:
           command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('haltonerror', true, 'tags', {'Minimal_install'}); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v4
         with:
           name: data_${{github.job}}
           path: |
             /test/projects/report/
 
       - name: Archive log
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v4
         with:
           name: testlog_${{github.job}}
           path: |
