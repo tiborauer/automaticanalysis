@@ -67,6 +67,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -154,6 +160,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -241,6 +253,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -330,6 +348,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -419,6 +443,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -509,6 +539,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -594,6 +630,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
@@ -684,6 +726,12 @@ jobs:
         with:
           # MATLAB release to set up R2024a
           release: R2024a
+          products: >
+            Image_Processing_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Install tools and configure aa
         run: |
