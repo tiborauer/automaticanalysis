@@ -1,7 +1,7 @@
 % Extract the reference(s) image(s) (T2 image with b-value of 0), called
 % nodif
 
-function [aap resp]=aamod_diffusion_extractnodif(aap,task,subjind,diffsessind)
+function [aap, resp]=aamod_diffusion_extractnodif(aap,task,subjind,diffsessind)
 resp='';
 
 switch task
@@ -18,22 +18,22 @@ switch task
             for peind=1:2
                 difffn_list{peind}=aas_getfiles_bystream(aap,'diffusion_session_phaseencode_direction',[subjind diffsessind peind],'diffusion_data');
                 bvalfn_list{peind}=aas_getfiles_bystream(aap,'diffusion_session_phaseencode_direction',[subjind diffsessind peind],'bvals');
-            end;
+            end
         else
             aas_log(aap,true,'No diffusion data found!');
-        end;
+        end
         
         % Load up one or more phase encoding directions
         Ytot=[];
         for peind=1:length(difffn_list)
             if size(difffn_list{peind},1)>1
                 aas_log(aap,true,sprintf('expecting a single 4d file but got %d files',length(difffn)));
-            end;
+            end
             % Load up this file
-            [V Y]=aas_spm_vol(difffn_list{peind});
+            [V, Y]=aas_spm_vol(difffn_list{peind});
             
             % Pick out the ones with no diffusion
-            bvals=spm_load(bvalfn_list{peind});
+            bvals = readmatrix(bvalfn_list{peind},'FileType','text');
             tol_b0 = aas_getsetting(aap,'tol_b0',diffsessind);
             if isempty(tol_b0), tol_b0 = 0; end
             indb0 = bvals <= tol_b0;
@@ -54,9 +54,9 @@ switch task
                 Ytot(:,:,:,peind)=Y;
             else
                 Ytot=Y;
-            end;
+            end
             
-        end;
+        end
         
         % Mean across phase encode directions
         Y=mean(Y,4);
