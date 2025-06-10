@@ -81,12 +81,8 @@ aap.tasksettings.aamod_meeg_rereference.diagnostics = aap.tasksettings.aamod_mee
 
 aap.tasksettings.aamod_meeg_ica.PCA = 'rank';
 aap.tasksettings.aamod_meeg_ica.iterations = 2000;
-aap.tasksettings.aamod_meeg_ica.method = 'AMICA';
-aap.tasksettings.aamod_meeg_ica.options.AMICA.num_models = 1; % learn 1 model
-% reject outliers (>3 SD) for the first 15 iterations 
-aap.tasksettings.aamod_meeg_ica.options.AMICA.numrej = 15; 
-aap.tasksettings.aamod_meeg_ica.options.AMICA.rejint = 1;
-aap.tasksettings.aamod_meeg_ica.options.AMICA.rejsig = 3;
+aap.tasksettings.aamod_meeg_ica.method = 'runica';
+aap.tasksettings.aamod_meeg_ica.options.runica.extended = 1;
 
 aap.tasksettings.aamod_meeg_dipfit.transformation = CHANNELFILE;
 aap.tasksettings.aamod_meeg_dipfit.volumeCondutionModel = fullfile('standard_BESA','standard_BESA.mat');

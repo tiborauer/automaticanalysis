@@ -54,12 +54,8 @@ aap.tasksettings.aamod_meeg_rereference.diagnostics = aap.tasksettings.aamod_mee
 
 aap.tasksettings.aamod_meeg_ica.PCA = 'rank';
 aap.tasksettings.aamod_meeg_ica.iterations = 2000;
-aap.tasksettings.aamod_meeg_ica.method = 'AMICA';
-aap.tasksettings.aamod_meeg_ica.options.AMICA.num_models = 1; % learn 1 model
-% reject outliers (>3 SD) for the first 15 iterations 
-aap.tasksettings.aamod_meeg_ica.options.AMICA.numrej = 15; 
-aap.tasksettings.aamod_meeg_ica.options.AMICA.rejint = 1;
-aap.tasksettings.aamod_meeg_ica.options.AMICA.rejsig = 3;
+aap.tasksettings.aamod_meeg_ica.method = 'runica';
+aap.tasksettings.aamod_meeg_ica.options.runica.extended = 1;
 
 % Automatic IC rejection using ICLabel label probability (brain > 0.7) and and residual variance (< 0.15) from dipole fitting (if performed).
 aap.tasksettings.aamod_meeg_icclassification.method = 'ICLabel';
