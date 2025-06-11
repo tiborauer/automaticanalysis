@@ -68,6 +68,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -161,6 +162,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -254,6 +256,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -349,6 +352,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -444,6 +448,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -540,6 +545,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -631,6 +637,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
@@ -727,6 +734,7 @@ jobs:
           # MATLAB release to set up R2024a
           release: R2024a
           products: >
+            Computer_Vision_Toolbox
             Image_Processing_Toolbox
             Optimization_Toolbox
             Parallel_Computing_Toolbox
