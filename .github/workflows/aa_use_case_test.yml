@@ -670,7 +670,7 @@ jobs:
       - name: Run script
         uses: matlab-actions/run-command@v2
         with:
-          command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_lemon_meegsensor','haltonerror',true); aa_test_getreport('/test/projects','/test/projects/report')
+          command: addpath(getenv('GITHUB_WORKSPACE')); aa_ver5; SPM = spmClass(fullfile('/test','tools','spm12')); SPM.load; aa_test('glob','aatest_lemon_meegsensor','haltonerror',true,'wheretoprocess','batch'); aa_test_getreport('/test/projects','/test/projects/report')
 
       - name: Archive data
         uses: actions/upload-artifact@v4
