@@ -9,6 +9,10 @@
             </qsub>
 
             <frequencyrange desc='Frequency range specified as [1x2]; specify "all" for the complete data'>all</frequencyrange>
+            <bandspec desc='band specification; subfields MUST be subset of ["delta" "theta" "alpha" "beta" "low gamma" "high gamma"]'>
+                <alpha desc='lower (inclusive) and upper (exclusive) frequency bounds specified as [1x2]'>8 13.5</alpha>
+                <beta desc='lower (inclusive) and upper (exclusive) frequency bounds specified as [1x2]'>13.5 32</beta>
+            </bandspec>    
             <aperiodicmode desc='approach to take for fitting the aperiodic component' options='fixed|knee' ui='optionlist'>fixed</aperiodicmode>
             
             <inputstreams>

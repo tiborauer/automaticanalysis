@@ -7,7 +7,7 @@ function outData = ft_average_bands(cfg,ipfdata,inData)
 %                       band, 1xN cell array with names of the bands as a subset of {'delta' 'theta' 'alpha' 'beta' 'low gamma' 'high gamma'}
 %                           (default = {'alpha' 'beta'})
 %                       bandbound, a 1xN cell array with lower and upper frequency bounds (as 1x2 numeric array) corresponding to cfg.bandspec.band 
-%                           (default = {[8 13] [14 32]})
+%                           (default = {[8 13.5] [13.5 32]})
 %
 % Optionally, you can specify a band data indicating individual peaks and bandwidths of frequency bands to adjust band specification. 
 %
