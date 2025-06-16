@@ -134,7 +134,7 @@ classdef aa_provenance < handle
                     'aa:objectModel','aa:aaWorkflow',...
                     'aa:version',{obj.version,'xsd:string'},...
                     });
-                obj.pp.wasGeneratedBy(idResults,'-',now);
+                obj.pp.wasGeneratedBy(idResults,'-',datetime('now'));
                 obj.pp.wasAssociatedWith(idResults,'idaa');
                                 
                 obj.p = feval(basename(obj.provlib));
@@ -157,6 +157,10 @@ classdef aa_provenance < handle
                     end
                 end
             end
+        end
+
+        function setSubject(obj,subj)
+            obj.indices(1) = subj;
         end
         
         function id = addModule(obj,stageindex)
@@ -194,7 +198,7 @@ classdef aa_provenance < handle
                 idname = ['idActivity_' name];
                 if ~isempty(smod.extraparameters) && isfield(smod.extraparameters.aap,'directory_conventions')
                     sfx = smod.extraparameters.aap.directory_conventions.analysisid_suffix; 
-                else sfx = ''; 
+                else, sfx = ''; 
                 end
                 
                 curr_aap = aas_setcurrenttask(obj.aap,stageindex,'subject',obj.indices(1));
@@ -236,11 +240,11 @@ classdef aa_provenance < handle
                         end
                     end
                     if srcindex == -1 % remote src --> add
-%                         [junk,src] = strtok(src,':'); src = src(3:end);
+%                         [~,src] = strtok(src,':'); src = src(3:end);
                         rstage = smod.remotestream(strcmp({smod.remotestream.stream},istream));
                         if isempty(rstage), rstage = smod.remotestream(strcmp({smod.remotestream.stream},[istage '.' istream])); end  % try current specified steamname
 %                         if isempty(rstage) % try any specified steamname                            
-%                             [junk,rem] = strtok_ptrn({smod.remotestream.stream},istream);
+%                             [~,rem] = strtok_ptrn({smod.remotestream.stream},istream);
 %                             rstage = smod.remotestream(strcmp(rem,istream));
 %                         end
                         idsrc = obj.addModule(rstage);
@@ -252,7 +256,7 @@ classdef aa_provenance < handle
                             'Stagename',lname,...
                             'Index',lindex,...
                             };
-                        [junk, junk, idsrc] = obj.idExist(idattr);
+                        [~, ~, idsrc] = obj.idExist(idattr);
                     end
                     
                     prid_inputstream = obj.addStream(idsrc,istream);
@@ -311,8 +315,8 @@ classdef aa_provenance < handle
                 aap.tasklist.currenttask.modality = daap.tasklist.currenttask.modality;
             end
             if strcmp(destdomain,'study'), destdomain = 'subject'; end
-            [junk, dtModule] = aas_dependencytree_allfromtrunk(aap,aap.tasklist.currenttask.domain);
-            [junk, dtOutput] = aas_dependencytree_allfromtrunk(aap,destdomain);
+            [~, dtModule] = aas_dependencytree_allfromtrunk(aap,aap.tasklist.currenttask.domain);
+            [~, dtOutput] = aas_dependencytree_allfromtrunk(aap,destdomain);
             if (numel(dtModule) > numel(dtOutput)), destdomain = dtModule{end}; end
             dep = aas_dependencytree_allfromtrunk(aap,destdomain);
             indices = indices(1:numel(dep{1}{2}));
@@ -324,7 +328,7 @@ classdef aa_provenance < handle
                 prid = ''; id = 0;
                 return
             end            
-            [junk, MD5] = strtok(MD5); MD5 = MD5(2:end);
+            [~, MD5] = strtok(MD5); MD5 = MD5(2:end);
             
             % Add stream
             idname = ['id' stream];
@@ -336,7 +340,7 @@ classdef aa_provenance < handle
             [prid, id] = obj.Stream(idname,idattr,files);
         end
         
-        function [prid id] = Module(obj,idname,attr) % 'Location', 'Stagename','Index'
+        function [prid, id] = Module(obj,idname,attr) % 'Location', 'Stagename','Index'
             [prid, num, id]= obj.idExist(idname,attr);
             if isempty(prid)
                 obj.IDs{end+1} = struct('id', [idname num2str(num+1)]);
@@ -354,7 +358,7 @@ classdef aa_provenance < handle
             end
         end
         
-        function [prid id] = Stream(obj,idname,attr,files) % 'streamname','filename(full)','hash';
+        function [prid, id] = Stream(obj,idname,attr,files) % 'streamname','filename(full)','hash';
             [prid, num, id]= obj.idExist(idname,attr);
             if isempty(prid)
                 obj.IDs{end+1} = struct('id', [idname num2str(num+1)]);
@@ -365,7 +369,7 @@ classdef aa_provenance < handle
                 prid = obj.IDs{id}.id;
                 
                 % add hash
-                [junk, hnum]= obj.idExist('idHash');
+                [~, hnum]= obj.idExist('idHash');
                 obj.IDs{end+1} = struct(...
                     'id',['idHash' num2str(hnum+1)],...
                     'hash',obj.IDs{id}.hash ...

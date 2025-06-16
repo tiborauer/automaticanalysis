@@ -6,7 +6,7 @@
 % Rhodri Cusack MRC CBU Cambridge 2004
 % Tibor Auer MRC CBU Cambridge 2012-2016
 
-function [aap]=aa_report(studyroot,stages)
+function [aap]=aa_report(studyroot,stages,provsubj)
 
 fprintf('Fetching report started...\n');
 
@@ -30,7 +30,7 @@ aa_init(aap);
 
 % stages to report
 allstages = arrayfun(@(x) aas_getstagetag(aap,x), 1:numel(aap.tasklist.main.module), 'UniformOutput', false);
-if ~exist('stages','var')
+if ~exist('stages','var') || isempty(stages)
     stages=allstages;
     provnoinput = false;
 else
@@ -47,6 +47,7 @@ aap.internal.stagesnotdone=0;
 
 aap.prov = aa_provenance(aap);
 aap.prov.donotcheckinput = provnoinput;
+if exist('provsubj','var'), aap.prov.setSubject(provsubj); end
 
 % Flags for special reports
 % - collect module executables
