@@ -46,7 +46,7 @@ EEGLABFILE = fullfile(EEG.filepath,EEG.filename);
 tbpath = '';
 lastwarn('')
 ft_hastoolbox('eeglab',1);
-if ~isempty(strfind(lastwarn,'eeglab'))
+if contains(lastwarn,'eeglab')
     tbpath = strsplit(lastwarn); tbpath = tbpath{2};
 end
 
@@ -142,8 +142,8 @@ if cfg.reorient
     data.elec.chanpos(:,1:3) = data.elec.chanpos(:,[indX indY indZ]);
     
     % check axes direction
-    data.elec.elecpos(:,1) = (AP(indX)/abs(AP(indX)))*data.elec.elecpos(:,1);
-    data.elec.elecpos(:,2) = (AP(indY)/abs(AP(indY)))*data.elec.elecpos(:,2);
+    if AP(indX), data.elec.elecpos(:,1) = (AP(indX)/abs(AP(indX)))*data.elec.elecpos(:,1); end
+    if AP(indY), data.elec.elecpos(:,2) = (AP(indY)/abs(AP(indY)))*data.elec.elecpos(:,2); end
 end
 
 % clear path
