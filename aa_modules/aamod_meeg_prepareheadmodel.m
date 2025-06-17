@@ -107,7 +107,7 @@ switch task
                 end
             otherwise
                 thr = aas_getsetting(aap,'segmentation.threshold');
-                if numel(thr) == 1, thr(1:numel(tpms)) = thr; end
+                if isscalar(thr), thr(1:numel(tpms)) = thr; end
                 for i = 1:numel(tpms)
                     f = tpms(i);
                     maxY = max(seg.(f{1})(:));
@@ -190,6 +190,7 @@ switch task
                 headmodel  = ft_prepare_headmodel(cfg, seg);
                 
             case 'simbio'
+                FT.addExternal('simbio');
                 cfg        = [];
                 cfg.shift  = settings.meshshift;
                 cfg.method = 'hexahedral';
@@ -202,6 +203,7 @@ switch task
                 cfg.tissue = strsplit(settings.tissue,':');
                 cfg.conductivity = settings.conductivity;
                 headmodel  = ft_prepare_headmodel(cfg, mesh);
+                FT.rmExternal('simbio');
             otherwise
                 aas_log(aap,true,sprintf('method %s is not implemented',aas_getsetting(aap,'method')));
         end

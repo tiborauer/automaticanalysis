@@ -186,6 +186,10 @@ switch task
             cfg.headmodel   = headmodel;
             cfg.normalize = settings.normalize;
             data.elec = elec_final;
+            switch aas_getsetting(aas_setcurrenttask(aap,aas_getsourcestage(aap,'aamod_meeg_prepareheadmodel')),'method')
+                case 'simbio'
+                    FT.addExternal('simbio');
+            end
             sourcemodel = ft_prepare_leadfield(cfg, data);
             
             % QA leadfield

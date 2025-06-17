@@ -13,6 +13,9 @@ switch task
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
         
         [~, EL] = aas_cache_get(aap,'eeglab');
+        [~, FT] = aas_cache_get(aap,'fieldtrip');
+        FT.load;
+        FT.addExternal('inverse');
         EL.load;
         
         indfnEEG = strcmp(spm_file(infname,'ext'),'set');
@@ -65,8 +68,9 @@ switch task
         % save
         outfname = spm_file(infname,'prefix','dipfit_');
         pop_saveset(EEG,'filepath',aas_getsesspath(aap,subj,sess),'filename',spm_file(outfname{indfnEEG},'basename'));
-
+       
         EL.unload;
+        FT.unload;
                 
         %% Describe outputs
         aap = aas_desc_outputs(aap,subj,sess,'meeg',outfname);
