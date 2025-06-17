@@ -42,7 +42,6 @@
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>clean_rawdata</name>
-                        <version>2.5</version>
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>AMICA</name>
@@ -50,7 +49,6 @@
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>dipfit</name>
-                        <version>4.3</version>
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>Fieldtrip-lite</name>

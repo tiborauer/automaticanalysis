@@ -7,8 +7,8 @@ TEMPLATEDIR=$TOOLDIR/templates
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 sudo add-apt-repository 'deb http://gb.archive.ubuntu.com/ubuntu/ bionic main universe' -y
 
-sudo apt-get update
-sudo apt-get install libgfortran3 libtinfo6 dc libxml2-utils graphviz
+sudo apt update
+sudo apt install libgfortran3 libtinfo6 dc libxml2-utils graphviz
 python -m pip install --upgrade pip
 
 # All MATLAB tools MUST be installed referred by the parameterset
