@@ -9,6 +9,7 @@
             </qsub>
             
             <rejectionevent desc='eventvalue used to indicate rejection of data'>boundary</rejectionevent>
+            <ensurefieldtripcompatibility desc='ensure Fieldtrip-compatibility by re-inserting t=0 event if outside event window'>1</ensurefieldtripcompatibility>
             
             <eventtype></eventtype>
             <condition>

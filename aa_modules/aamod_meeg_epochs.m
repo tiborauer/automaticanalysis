@@ -5,13 +5,12 @@ resp='';
 switch task
     case 'report'
         [~, EL] = aas_cache_get(aap,'eeglab');
-        [~, FT] = aas_cache_get(aap,'fieldtrip');
 
-        MAXNTRIAL=1000; % do not expect more than 1000 trials
+        MAXNTRIAL = 1000; % do not expect more than 1000 trials
         
         outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg','output'));
         outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
-        conds = strsplit(spm_file(outfname{1},'basename'),'_'); conds = conds(2:end-1); % first is 'epochs', last is 'seg-x'
+        conds = regexp(spm_file(outfname,'basename'),'(?<=_)[A-Z-0-9]+','match','once');
         condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);
         
         % init summary
@@ -32,22 +31,18 @@ switch task
         switch EL.status
             case 'defined', EL.load;
             case 'unloaded', EL.reload;
-        end 
-        for d = 1:numel(outfname)
-            EEG(d) = pop_loadset('filepath',spm_file(outfname{d},'path'),'filename',spm_file(outfname{d},'filename'));
         end
+        % all urevents are in all files
+        eeg = pop_loadset('filepath',spm_file(outfname{1},'path'),'filename',spm_file(outfname{1},'filename'));
+        urevent = eeg.urevent;
+        
+        % remove unwanted events because they may confound the conversion
+        for e = 1:numel(urevent)
+            urevent(e).type = get_eventvalue(urevent(e).type);
+        end
+        eoi = arrayfun(@(x) any(condnum==x), [urevent.type]);
+        urevent(~eoi) = [];           
         EL.unload;
-        switch FT.status
-            case 'defined', FT.load;
-            case 'unloaded', FT.reload;
-        end 
-        for d = 1:numel(outfname)
-            % remove unwanted events because they may confound the conversion
-            EOI = arrayfun(@(x) any(condnum==x), cellfun(@(x) get_eventvalue(x), {EEG(d).event.type}));
-            EEG(d).event(~EOI) = [];
-            seg(d) = eeglab2fieldtripER(EEG(d));
-        end
-        FT.unload;        
 
         for t = 1:2 % specific and combined trialnumber
             trl = nan(numel(outfname),MAXNTRIAL,numel(conds));
@@ -265,24 +260,6 @@ switch task
             eventdef(indSegmentDefiniftion) = [];
         end
         
-        % process events
-        condfn = '';
-        for e = 1:numel(eventdef)
-            % detect trialnumber
-            condfn = sprintf('%s_%s-%d',condfn,eventdef(e).conditionlabel,get_eventvalue(eventdef(e).eventvalue));
-            if e == 1
-                % adjust event window
-                eventdef(e).eventwindow = (eventdef(e).eventwindow + eventdef(e).trlshift)/1000; % in seconds
-                % set baseline correction wondow
-                if ~isempty(eventdef(e).baselinewindow) && isnumeric(eventdef(e).baselinewindow)
-                    eventdef(e).baselinewindow = eventdef(e).baselinewindow + eventdef(e).trlshift; % in milliseconds
-                end
-            else
-                aas_log(aap,false,['WARNING: timewindow and baselinewindow are exected to be consistent across events\n\t'...
-                    '-> only those of the first event will be considered']);
-            end
-        end
-        
         % data rejection, correct events if rejection happens together with an event
         eventRejection = aas_getsetting(aap,'rejectionevent');
         
@@ -326,29 +303,117 @@ switch task
             end
             
             % epoch
-            if ~isempty(eventdef)
-                epochEEG = pop_epoch(segEEG,{eventdef.eventvalue},eventdef(1).eventwindow);
-            else
+            if isempty(eventdef)
                 epochEEG = segEEG;
-            end
-                        
-            % baseline correction
-            if ~isempty(eventdef(1).baselinewindow)
-                if isnumeric(eventdef(1).baselinewindow)
-                    epochEEG = pop_rmbase(epochEEG,eventdef(1).baselinewindow);
-                else
-                    switch eventdef(1).baselinewindow
-                        case 'all'
-                            epochEEG = pop_rmbase(epochEEG,[]);
-                        otherwise
-                            % NYI
-                    end
-                end
-            end
+                datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_seg-%d.set',seg));
+                datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_seg-%d.fdt',seg));
+                pop_saveset(epochEEG,datafn{end});
+            else
+                for ev = eventdef
+                    epochEEG = pop_epoch(segEEG,{ev.eventvalue},(ev.eventwindow + ev.trlshift)/1000);
 
-            datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs%s_seg-%d.set',condfn,seg));
-            datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs%s_seg-%d.fdt',condfn,seg));
-            pop_saveset(epochEEG,datafn{end});
+                    % baseline correction
+                    if ~isempty(ev.baselinewindow)
+                        if isnumeric(ev.baselinewindow)
+                            epochEEG = pop_rmbase(epochEEG,ev.baselinewindow + ev.trlshift);
+                        else
+                            switch ev.baselinewindow
+                                case 'all'
+                                    epochEEG = pop_rmbase(epochEEG,[]);
+                                otherwise
+                                    % NYI
+                            end
+                        end
+                    end
+
+                    % Inster event-of-interest outside eventwindow as event with 0 latency
+                    if aas_getsetting(aap,'ensurefieldtripcompatibility')
+                        if (ev.eventwindow(1) + ev.trlshift) > 0 % eventwindow after the event
+                            urevent = nan(1,epochEEG.trials);
+                            for ep = 1:epochEEG.trials
+                                switch numel(epochEEG.epoch(ep).event)
+                                    case 0
+                                        e_pre = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(1:ep-1)),1,'last');
+                                        % no previous event
+                                        if isempty(e_pre), ur_pre = 1;
+                                        else
+                                            ur_pre = epochEEG.epoch(e_pre).eventurevent(end);
+                                            try ur_pre = double(ur_pre); catch, ur_pre = ur_pre{1}; end
+                                        end
+                                        
+                                        e_post = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(ep+1:end)),1,'first');
+                                        % no posterior event
+                                        if isempty(e_post), ur_post = numel(epochEEG.urevent);
+                                        else
+                                            ur_post = epochEEG.epoch(ep+e_post).eventurevent(1);
+                                            try ur_post = double(ur_post); catch, ur_post = ur_post{1}; end
+                                        end
+                                        
+                                        n_ur = ur_pre - 1 + find(strcmp({epochEEG.urevent(ur_pre:ur_post).type},ev.eventvalue));
+                                        if numel(n_ur) > 1
+                                            isUr = false;
+                                            for n = n_ur
+                                                if all(epochEEG.etc.clean_sample_mask(n+epochEEG.xmin*1000:n+epochEEG.xmax*1000))
+                                                    isUr = true;
+                                                    break;
+                                                end
+                                            end
+                                            if ~isUr, aas_log(aap,true,['No clean epoch with event ' ev.eventvalue ' at t=0 found']); end
+                                        end
+                                        urevent(ep) = n;
+                                    case 1                                
+                                        lat = epochEEG.epoch(ep).eventlatency;
+                                        urind = epochEEG.epoch(ep).eventurevent;                                
+                                        urevent(ep) = find([epochEEG.urevent.latency] == (epochEEG.urevent(urind).latency - lat));
+                                    otherwise
+                                        aas_log(aap,1,'NYI')
+                                end
+                            end
+    
+                            % update events
+                            ev_insert = struct(...
+                                'type', ev.eventvalue,...
+                                'duration', 1,...
+                                'timestamp', [],...
+                                'latency', num2cell((0:diff(epochEEG.times([1 end]))+1:(epochEEG.trials-1)*(diff(epochEEG.times([1 end]))+1))-epochEEG.times(1)+1),...
+                                'urevent', num2cell(urevent),...
+                                'epoch', num2cell(1:epochEEG.trials)...
+                                );
+                            epochEEG.event = table2struct(sortrows(struct2table([ev_insert epochEEG.event]),[6 4]))';
+    
+                            % update epochs
+                            for ep = 1:epochEEG.trials
+                                indE = find([epochEEG.event.epoch] == ep);
+                                if isscalar(indE)
+                                    epochEEG.epoch(ep) = struct(...
+                                        'event', indE,...
+                                        'eventtype', epochEEG.event(indE).type,...
+                                        'eventduration',1,...
+                                        'eventtimestamp',[],...
+                                        'eventlatency',epochEEG.event(indE).latency+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1),...
+                                        'eventurevent',epochEEG.event(indE).urevent...
+                                        );
+                                else
+                                    epochEEG.epoch(ep).event = indE;
+                                    epochEEG.epoch(ep).eventtype= {epochEEG.event(indE).type};
+                                    epochEEG.epoch(ep).eventduration = repmat({1},1,numel(indE));
+                                    epochEEG.epoch(ep).eventtimestamp = repmat({[]},1,numel(indE));
+                                    epochEEG.epoch(ep).eventlatency = num2cell([epochEEG.event(indE).latency]+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1));
+                                    epochEEG.epoch(ep).eventurevent = {epochEEG.event(indE).urevent};
+                                end
+                            end
+    
+                        elseif (ev.eventwindow(2) + ev.trlshift) < 0 % eventwindow before the event
+                            aas_log(aap,1,'NYI')
+                        end
+                    end
+                    
+                    condfn = sprintf('%s-%d',ev.conditionlabel,get_eventvalue(ev.eventvalue));
+                    datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.set',condfn,seg));
+                    datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.fdt',condfn,seg));
+                    pop_saveset(epochEEG,datafn{end});                    
+                end
+            end               
         end
         
         EL.unload;
@@ -373,7 +438,7 @@ if isnumeric(eventvalue)
 elseif ischar(eventvalue) && numel(eventvalue)>1 && (eventvalue(1)=='S'|| eventvalue(1)=='R')
     val = str2double(eventvalue(2:end));
 else
-    aas_log(aap,false,'Eventvalue cannot be parsed')
+    warning('Eventvalue %s cannot be parsed',eventvalue);
     val = nan;
 end
 end
