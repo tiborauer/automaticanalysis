@@ -96,6 +96,8 @@ switch task
                     otherwise
                         aas_log(aap,true,'Unsupported file format')
                 end
+                % - select only data with event-of-interest
+                meegfn = meegfn(cellfun(@(f) any(cellfun(@(e) contains(f,e),m.event.names)), meegfn));
                 for seg = 1:numel(meegfn)
                     switch filetype
                         case 'fieldtrip'
@@ -103,11 +105,10 @@ switch task
                             data(seg) = ft_struct2single(dat.data);
                         case 'eeglab'
                             FT.unload;
-                            if seg == 1
-                                [~, EL] = aas_cache_get(aap,'eeglab');
-                                EL.load;
-                            else
-                                EL.reload;
+                            if ~exist('EL','var'), [~, EL] = aas_cache_get(aap,'eeglab'); end
+                            switch EL.status
+                                case 'defined', EL.load;
+                                case 'unloaded', EL.reload;
                             end
                             EEG = pop_loadset('filepath',spm_file(meegfn{seg},'path'),'filename',spm_file(meegfn{seg},'filename'));
                             if isempty(EEG.epoch)
