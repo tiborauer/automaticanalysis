@@ -5,73 +5,69 @@ resp='';
 switch task
     case 'report'
         [~, EL] = aas_cache_get(aap,'eeglab');
-
+        
         MAXNTRIAL = 1000; % do not expect more than 1000 trials
         
         outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg','output'));
         outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
+        segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
         conds = regexp(spm_file(outfname,'basename'),'(?<=_)[A-Z-0-9]+','match','once');
         condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);
         
         % init summary
         % - first session
         if ~isfield(aap.report, mfilename)
-            aap.report.(mfilename).trl{1} = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions)); % combined trialnumber
-            aap.report.(mfilename).trl{2} = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions)); % specific trialnumber
+            aap.report.(mfilename).alltrials = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
             aap.report.(mfilename).condcount = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
         end
-        % - new subject/session
-        aap.report.(mfilename).trl{1}{subj,sess} = zeros(numel(outfname),0,numel(conds));
-        aap.report.(mfilename).trl{2}{subj,sess} = zeros(numel(outfname),0,numel(conds));
-        aap.report.(mfilename).condcount{subj,sess} = nan(numel(outfname),numel(conds));
         
         %% Individual
-        % plot
-        sfxPlot = {'specific' 'combined'};
+        % collect trials
         switch EL.status
             case 'defined', EL.load;
             case 'unloaded', EL.reload;
         end
-        % all urevents are in all files
-        eeg = pop_loadset('filepath',spm_file(outfname{1},'path'),'filename',spm_file(outfname{1},'filename'));
-        urevent = eeg.urevent;
-        
-        % remove unwanted events because they may confound the conversion
-        for e = 1:numel(urevent)
-            urevent(e).type = get_eventvalue(urevent(e).type);
+        for c = 1:numel(conds)
+            subjtrials{c} = logical(sparse(numel(segments),MAXNTRIAL));
+            for s = segments            
+                eeg = pop_loadset('filepath',aas_getpath_bydomain(aap,'meeg_session',[subj sess]),'filename',sprintf(['epochs_' conds{c} '_seg-%d.set'],s));
+                
+                trials = struct2table(rmfield(eeg.event,{'duration' 'timestamp' 'latency' 'epoch'}));
+                trials.type = cellfun(@get_eventvalue, trials.type);
+                trials(trials.type ~= condnum(c),:) = [];
+
+                utrials = cellfun(@get_eventvalue, {eeg.urevent.type})';
+                indtrials = cumsum(utrials == condnum(c));
+
+                subjtrials{c}(s,indtrials([trials.urevent])) = true;                
+            end
+            subjtrials{c}(:,max(indtrials)+1:end) = [];
         end
-        eoi = arrayfun(@(x) any(condnum==x), [urevent.type]);
-        urevent(~eoi) = [];           
         EL.unload;
 
-        for t = 1:2 % specific and combined trialnumber
-            trl = nan(numel(outfname),MAXNTRIAL,numel(conds));
-            for d = 1:numel(outfname)
-                for c = 1:numel(conds)
-                    trl(d,table2array(seg(d).ureventinfo(seg(d).trialinfo == condnum(c),t)),c) = -d;
+        % plot
+        fn = fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_trials.jpg']);
+        if ~exist(fn,'file')
+            f = figure;
+            f.Position = [0 0 200*numel(conds) 200*numel(segments)];
+            tiledlayout(1,numel(conds),'TileSpacing','none')
+            for c = 1:numel(conds)
+                ax = nexttile;
+                hold on
+                arrayfun(@(s) plot(find(subjtrials{c}(s,:)),-s,'b*','MarkerSize',7), 1:numel(segments))
+                hold off
+                ylim([-max(segments+0.5),-0.5]); yticks(-max(segments):-1);
+                if c == 1, yticklabels(arrayfun(@(x) sprintf('segment %d',x),max(segments):-1:1,'UniformOutput',false)); 
+                else, yticklabels({});
                 end
-            end
-            isTrial = squeeze(sum(isnan(trl),1))<size(trl,1);
-            if find(size(isTrial) == MAXNTRIAL) == 2, isTrial = isTrial'; end % make sure it is column
-            ntrl = find(sum(isTrial,2),1,'last');
-            trl = trl(:,1:ntrl,:);
-            fn = fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_trialcount_' sfxPlot{t} '.jpg']);
-            if ~exist(fn,'file')
-                f = figure;
-                for c = 1:size(trl,3)
-                    ax = subplot(1,size(trl,3),c);
-                    plot(1:size(trl,2),trl(:,:,c),'*','MarkerSize',7);
-                    ylim([-5,0]); yticks(-size(trl,1):-1); yticklabels(arrayfun(@(x) sprintf('segment %d',x),size(trl,1):-1:1,'UniformOutput',false));
-                    xlim([0 size(trl,2)+1]); xticks(5:5:size(trl,2)); set(ax,'XGrid','on');
-                    title(ax,conds{c});
-                end
-                
-                print(f,'-djpeg','-r300',fn);
-                close(f);
-            end
-            aap=aas_report_addimage(aap,subj,fn);
-            aap.report.(mfilename).trl{t}{subj,sess} = ~isnan(trl);
+                xlim([0 size(subjtrials{c},2)]);
+                title(ax, conds{c});
+            end            
+            print(f,'-djpeg','-r300',fn);
+            close(f);
         end
+        aap=aas_report_addimage(aap,subj,fn);
+        aap.report.(mfilename).alltrials{subj,sess} = subjtrials;
         
         % table
         aap = aas_report_add(aap,subj,'<table id="data"><tr>');
@@ -80,33 +76,31 @@ switch task
             aap = aas_report_add(aap,subj,sprintf('<th>%s</th>',conds{c}));
         end
         aap = aas_report_add(aap,subj,'</tr>');
-        for d = 1:numel(outfname)
+        for s = segment
             aap = aas_report_add(aap,subj,'<tr>');
-            aap = aas_report_add(aap,subj,sprintf('<td>%s</td>',spm_file(outfname{d},'basename')));
+            aap = aas_report_add(aap,subj,sprintf('<td>segment %d</td>',s));
             for c = 1:numel(conds)
-                condcount(d,c) = sum(aap.report.aamod_meeg_epochs.trl{1}{subj,sess}(d,:,c));
-                aap = aas_report_add(aap,subj,sprintf('<td>%d</td>',condcount(d,c)));
+                condcount(s,c) = nnz(subjtrials{c}(s,:));
+                aap = aas_report_add(aap,subj,sprintf('<td>%d</td>',condcount(s,c)));
             end
             aap = aas_report_add(aap,subj,'</tr>');
         end
         aap = aas_report_add(aap,subj,'</table>');
         condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
-        aap.report.(mfilename).condcount{subj,sess}(:,:) = condcount;
+        aap.report.(mfilename).condcount{subj,sess} = condcount;
         
         %% Summary in case of more subjects
         if (subj > 1) && (subj == numel(aap.acq_details.subjects)) % last subject
             % missing data
-            % - trl
-            for t = 1:2
-                % -- data size based on full data
-                dnd = cellfun(@ndims, aap.report.(mfilename).trl{t}(:,sess));
-                sel = dnd == max(dnd);
-                ds = max(cell2mat(cellfun(@size, aap.report.(mfilename).trl{t}(sel,sess), 'UniformOutput',false)));
-                for dsubj = 1:size(aap.report.(mfilename).trl{t},1)
-                    trl = aap.report.(mfilename).trl{t}{dsubj,sess};
-                    aap.report.(mfilename).trl{t}{dsubj,sess} = zeros(ds);
-                    aap.report.(mfilename).trl{t}{dsubj,sess}(1:size(trl,1),1:size(trl,2),1:size(trl,3)) = trl;
-                end
+            % - subjtrials
+            % -- data size based on full data
+            nSeg = cellfun(@numel, aap.report.(mfilename).subjtrials(:,sess));
+            sel = nSeg < max(nSeg);
+            ds = max(cell2mat(cellfun(@size, aap.report.(mfilename).trl{t}(sel,sess), 'UniformOutput',false)));
+            for dsubj = 1:size(aap.report.(mfilename).trl{t},1)
+                trl = aap.report.(mfilename).trl{t}{dsubj,sess};
+                aap.report.(mfilename).trl{t}{dsubj,sess} = zeros(ds);
+                aap.report.(mfilename).trl{t}{dsubj,sess}(1:size(trl,1),1:size(trl,2),1:size(trl,3)) = trl;
             end
 
             % - condcount
