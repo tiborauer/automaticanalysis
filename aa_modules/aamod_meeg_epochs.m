@@ -351,7 +351,8 @@ switch task
                                         case 0
                                             aas_log(aap,true,['No clean epoch with event ' ev.eventvalue ' at t=0 found']);
                                         otherwise
-                                            aas_log(aap,true,['Mutliple clean epochs with event ' ev.eventvalue ' at t=0 found']);
+                                            aas_log(aap,false,['Mutliple clean epochs with event ' ev.eventvalue ' at t=0 found -> selecting the first']);
+                                            urevent(ep) = n_ur(find(isUr,1,'first'));
                                     end
 
                                 else                         
@@ -375,7 +376,9 @@ switch task
                                 'urevent', num2cell(urevent),...
                                 'epoch', num2cell(1:epochEEG.trials)...
                                 );
-                            epochEEG.event = table2struct(sortrows(struct2table([ev_insert epochEEG.event]),[6 4]))';
+                            ev_insert = rmfield(ev_insert,setdiff(fieldnames(ev_insert),fieldnames(epochEEG.event)));
+                            [~, ~, sortInd] = intersect({'epoch' 'latency'},fieldnames(ev_insert));
+                            epochEEG.event = table2struct(sortrows(struct2table([ev_insert epochEEG.event]),sortInd))';
     
                             % update epochs
                             for ep = 1:epochEEG.trials
