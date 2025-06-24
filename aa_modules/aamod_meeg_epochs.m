@@ -325,42 +325,44 @@ switch task
                         if (ev.eventwindow(1) + ev.trlshift) > 0 % eventwindow after the event
                             urevent = nan(1,epochEEG.trials);
                             for ep = 1:epochEEG.trials
-                                switch numel(epochEEG.epoch(ep).event)
-                                    case 0
-                                        e_pre = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(1:ep-1)),1,'last');
-                                        % no previous event
-                                        if isempty(e_pre), ur_pre = 1;
-                                        else
-                                            ur_pre = epochEEG.epoch(e_pre).eventurevent(end);
-                                            try ur_pre = double(ur_pre); catch, ur_pre = ur_pre{1}; end
-                                        end
-                                        
-                                        e_post = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(ep+1:end)),1,'first');
-                                        % no posterior event
-                                        if isempty(e_post), ur_post = numel(epochEEG.urevent);
-                                        else
-                                            ur_post = epochEEG.epoch(ep+e_post).eventurevent(1);
-                                            try ur_post = double(ur_post); catch, ur_post = ur_post{1}; end
-                                        end
-                                        
-                                        n_ur = ur_pre - 1 + find(strcmp({epochEEG.urevent(ur_pre:ur_post).type},ev.eventvalue));
-                                        if numel(n_ur) > 1
-                                            isUr = false;
-                                            for n = n_ur
-                                                if all(epochEEG.etc.clean_sample_mask(n+epochEEG.xmin*1000:n+epochEEG.xmax*1000))
-                                                    isUr = true;
-                                                    break;
-                                                end
-                                            end
-                                            if ~isUr, aas_log(aap,true,['No clean epoch with event ' ev.eventvalue ' at t=0 found']); end
-                                        end
-                                        urevent(ep) = n;
-                                    case 1                                
+                                if isempty(epochEEG.epoch(ep).event)
+                                    e_pre = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(1:ep-1)),1,'last');
+                                    % no previous event
+                                    if isempty(e_pre), ur_pre = 1;
+                                    else
+                                        ur_pre = epochEEG.epoch(e_pre).eventurevent(end);
+                                        try ur_pre = double(ur_pre); catch, ur_pre = ur_pre{1}; end
+                                    end
+                                    
+                                    e_post = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(ep+1:end)),1,'first');
+                                    % no posterior event
+                                    if isempty(e_post), ur_post = numel(epochEEG.urevent);
+                                    else
+                                        ur_post = epochEEG.epoch(ep+e_post).eventurevent(1);
+                                        try ur_post = double(ur_post); catch, ur_post = ur_post{1}; end
+                                    end
+                                    
+                                    n_ur = ur_pre - 1 + find(strcmp({epochEEG.urevent(ur_pre:ur_post).type},ev.eventvalue));
+                                    n_ur(end) = []; % last event belongs to the next epoch
+                                    isUr = arrayfun(@(n) all(epochEEG.etc.clean_sample_mask(epochEEG.urevent(n).latency+epochEEG.xmin*1000:epochEEG.urevent(n).latency+epochEEG.xmax*1000)), n_ur);
+                                    switch sum(isUr)
+                                        case 1
+                                            urevent(ep) = n_ur(isUr);
+                                        case 0
+                                            aas_log(aap,true,['No clean epoch with event ' ev.eventvalue ' at t=0 found']);
+                                        otherwise
+                                            aas_log(aap,true,['Mutliple clean epochs with event ' ev.eventvalue ' at t=0 found']);
+                                    end
+
+                                else                         
+                                    if iscell(epochEEG.epoch(ep).eventlatency)
+                                        lat = epochEEG.epoch(ep).eventlatency{1};
+                                        urind = epochEEG.epoch(ep).eventurevent{1};                                
+                                    else
                                         lat = epochEEG.epoch(ep).eventlatency;
                                         urind = epochEEG.epoch(ep).eventurevent;                                
-                                        urevent(ep) = find([epochEEG.urevent.latency] == (epochEEG.urevent(urind).latency - lat));
-                                    otherwise
-                                        aas_log(aap,1,'NYI')
+                                    end
+                                    urevent(ep) = find([epochEEG.urevent.latency] == (epochEEG.urevent(urind).latency - lat));
                                 end
                             end
     
