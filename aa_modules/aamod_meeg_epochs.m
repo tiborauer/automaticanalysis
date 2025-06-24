@@ -153,7 +153,7 @@ switch task
                 cb = colorbar('eastoutside'); set(cb,'XTick',[minTRL numel(tmp)]-minTRL+1.5); set(cb,'XTickLabel',get(cb,'XTick')+minTRL-1.5);
                 title(ax,conds{c});
             end
-            
+
             print(condcountFig,'-djpeg','-r300',condcountFn);
             close(condcountFig);
             aap=aas_report_addimage(aap,'er',condcountFn);
@@ -165,21 +165,19 @@ switch task
             % Stat table
             aap = aas_report_add(aap,'er','<table id="data"><tr>');
             aap = aas_report_add(aap,'er','<th>Segment</th>');
-            for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2) % for each condition
-                if ~isempty(strfind(conds{c},'seg-')), continue; end
+            for c = 1:numel(conds) % for each condition
                 aap = aas_report_add(aap,'er',sprintf('<th>%s [median (IQR)]</th>',conds{c}));
                 aap = aas_report_add(aap,'er',sprintf('<th>Outliers</th>'));
             end
             aap = aas_report_add(aap,'er','</tr>');
-            for d = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
+            for seg = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
                 aap = aas_report_add(aap,'er','<tr>');
-                aap = aas_report_add(aap,'er',sprintf('<td>%s</td>',spm_file(outfname{d},'basename')));
-                for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2) % for each condition
-                    if ~isempty(strfind(conds{c},'seg-')), continue; end
-                    aap = aas_report_add(aap,'er',sprintf('<td>%3.3f (%3.3f)</td>',boxValPlot{c}(d,:).q2,boxValPlot{c}(d,:).q3-boxValPlot{c}(d,:).q1));
+                aap = aas_report_add(aap,'er',sprintf('<td>segment %d</td>',seg));
+                for c = 1:numel(conds) % for each condition
+                    aap = aas_report_add(aap,'er',sprintf('<td>%3.3f (%3.3f)</td>',boxValPlot{c}.q2(seg),boxValPlot{c}.q3(seg)-boxValPlot{c}.q1(seg)));
                     subjstr = ' None';
-                    if boxValPlot{c}(d,:).numFiniteLoOutliers
-                        subjstr = strjoin({aap.acq_details.subjects(sort(cell2mat(boxValPlot{c}(d,:).outlierrows))).subjname},' ');
+                    if boxValPlot{c}.numFiniteLoOutliers(seg)
+                        subjstr = strjoin({aap.acq_details.subjects(sort(cell2mat(boxValPlot{c}.outlierrows(seg)))).subjname},' ');
                     end
                     aap = aas_report_add(aap,'er',sprintf('<td>%s</td>',subjstr));
                 end
