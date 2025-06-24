@@ -343,7 +343,7 @@ switch task
                                     end
                                     
                                     n_ur = ur_pre - 1 + find(strcmp({epochEEG.urevent(ur_pre:ur_post).type},ev.eventvalue));
-                                    n_ur(end) = []; % last event belongs to the next epoch
+                                    if ~isempty(e_post), n_ur(end) = []; end % last event belongs to the next epoch if there is one
                                     isUr = arrayfun(@(n) all(epochEEG.etc.clean_sample_mask(epochEEG.urevent(n).latency+epochEEG.xmin*1000:epochEEG.urevent(n).latency+epochEEG.xmax*1000)), n_ur);
                                     switch sum(isUr)
                                         case 1
