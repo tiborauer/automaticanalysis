@@ -32,7 +32,7 @@ switch task
             for s = segments            
                 eeg = pop_loadset('filepath',aas_getpath_bydomain(aap,'meeg_session',[subj sess]),'filename',sprintf(['epochs_' conds{c} '_seg-%d.set'],s));
                 
-                trials = struct2table(rmfield(eeg.event,{'duration' 'timestamp' 'latency' 'epoch'}));
+                trials = struct2table(rmfield(eeg.event,intersect(fieldnames(eeg.event),{'duration' 'timestamp' 'latency' 'epoch'})));
                 trials.type = cellfun(@get_eventvalue, trials.type);
                 trials(trials.type ~= condnum(c),:) = [];
 
@@ -76,7 +76,7 @@ switch task
             aap = aas_report_add(aap,subj,sprintf('<th>%s</th>',conds{c}));
         end
         aap = aas_report_add(aap,subj,'</tr>');
-        for s = segment
+        for s = segments
             aap = aas_report_add(aap,subj,'<tr>');
             aap = aas_report_add(aap,subj,sprintf('<td>segment %d</td>',s));
             for c = 1:numel(conds)
@@ -92,21 +92,9 @@ switch task
         %% Summary in case of more subjects
         if (subj > 1) && (subj == numel(aap.acq_details.subjects)) % last subject
             % missing data
-            % - subjtrials
-            % -- data size based on full data
-            nSeg = cellfun(@numel, aap.report.(mfilename).subjtrials(:,sess));
-            sel = nSeg < max(nSeg);
-            ds = max(cell2mat(cellfun(@size, aap.report.(mfilename).trl{t}(sel,sess), 'UniformOutput',false)));
-            for dsubj = 1:size(aap.report.(mfilename).trl{t},1)
-                trl = aap.report.(mfilename).trl{t}{dsubj,sess};
-                aap.report.(mfilename).trl{t}{dsubj,sess} = zeros(ds);
-                aap.report.(mfilename).trl{t}{dsubj,sess}(1:size(trl,1),1:size(trl,2),1:size(trl,3)) = trl;
-            end
-
-            % - condcount
-            isMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(mfilename).condcount(:,sess));
-            ds = size(aap.report.(mfilename).condcount{find(~isMissing,1,'first'),sess});
-            aap.report.(mfilename).condcount(isMissing,sess) = {nan(ds)};
+            isTrialMissing = cellfun(@isempty, aap.report.(mfilename).alltrials(:,sess));
+            isCondcountMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(mfilename).condcount(:,sess));
+            lastSubjCondcount = find(~isCondcountMissing,1,'last');
 
             [~, iSess] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,subj);
             firstSess = iSess(1);
@@ -127,44 +115,49 @@ switch task
             % Boxplot for each condition
             jitter = 0.1; % jitter around position
             jitter = (...
-                1+(rand([size(aap.report.(mfilename).condcount,1),size(aap.report.(mfilename).condcount{subj,sess},1)])-0.5) .* ...
-                repmat(jitter*2./[1:size(aap.report.(mfilename).condcount{subj,sess},1)],size(aap.report.(mfilename).condcount,1),1)...
+                1+(rand([sum(~isCondcountMissing),size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)])-0.5) .* ...
+                repmat(jitter*2./[1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1)...
                 ) .* ...
-                repmat([1:size(aap.report.(mfilename).condcount{subj,sess},1)],size(aap.report.(mfilename).condcount,1),1);
+                repmat([1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1);
+
             condcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_conditioncount.jpg']);
-            condcountFig = figure;
+            condcountFig = figure; condcountFig.Position = [0 0 200*numel(conds) 600*numel(segments)];            
+            tiledlayout(condcountFig,1,numel(conds),'TileSpacing','tight');
+
             trialcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_trialcount.jpg']);
-            trialcountFig = figure;
-            for c = 1:size(aap.report.(mfilename).condcount{subj,sess},2)
-                figure(condcountFig); ax = subplot(1,size(aap.report.(mfilename).condcount{subj,sess},2),c); hold on;
-                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(mfilename).condcount(:,sess), 'UniformOutput', false)')',...
+            trialcountFig = figure; trialcountFig.Position = [0 0 1080 100*numel(conds)]; 
+            tiledlayout(trialcountFig,numel(conds),1,'TileSpacing','tight');  
+
+            for c = 1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},2)
+                figure(condcountFig); ax = nexttile; hold on;
+                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(mfilename).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
                     'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(mfilename).condcount,3), 'UniformOutput', false));
-                for s = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
-                    scatter(jitter(:,s),cellfun(@(cc) cc(s,c), aap.report.(mfilename).condcount(:,sess)),'k','filled','MarkerFaceAlpha',0.4);
+                for seg = 1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)
+                    scatter(jitter(:,seg),cellfun(@(cc) cc(seg,c), aap.report.(mfilename).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
                 end
                 boxValPlot{c} = getappdata(getappdata(gca,'boxplothandle'),'boxvalplot');
-                title(ax,['# condition: ' conds{c}]);
-                
-                figure(trialcountFig);
-                for t = 1:2 % combined and specific trialnumber
-                    ax = subplot(2,size(aap.report.(mfilename).condcount{subj,sess},2),(t-1)*size(aap.report.(mfilename).condcount{subj,sess},2)+c);
-                    tmp = cellfun(@(trl) trl(:,:,c), aap.report.(mfilename).trl{t}(:,sess), 'UniformOutput', false);
-                    trl = squeeze(shiftdim(cat(3,tmp{:}),2));
-                    rangeTRL = [min(trl(:)) max(trl(:))];
-                    im = image(trl-rangeTRL(1)+1);
-                    im.Parent.FontSize = 12;
-                    daspect([1 1 1])
-                    yticks(1:size(trl,1)); yticklabels(arrayfun(@(x) sprintf('segment %d',x),1:size(trl,1),'UniformOutput',false));
-                    colormap(jet(diff(rangeTRL)+1));
-                    cb = colorbar('southoutside'); set(cb,'XTick',[rangeTRL(1) median(rangeTRL) rangeTRL(2)]-rangeTRL(1)+1.5); set(cb,'XTickLabel',get(cb,'XTick')+rangeTRL(1)-1.5); cb.Label.String = '# overlapping subjects';
-                    title(ax,['# trial: ' conds{c}]);
+                title(ax,conds{c});
+
+                figure(trialcountFig); ax = nexttile;
+                tmp = cellfun(@(trl) full(trl{c}), aap.report.(mfilename).alltrials(~isTrialMissing,sess), 'UniformOutput', false);
+                maxNTrials = max(cellfun(@numel, tmp));
+                for su = 1:numel(tmp)
+                    tmp{su}(end+1:maxNTrials) = false;
                 end
+                trl = sum(squeeze(shiftdim(cat(3,tmp{:}),2)));
+                minTRL = min(trl(:));
+                im = image(trl-minTRL+1);
+                im.Parent.FontSize = 12;
+                yticks(1:size(trl,1)); yticklabels(arrayfun(@(x) sprintf('segment %d',x),1:size(trl,1),'UniformOutput',false));
+                colormap(jet(numel(tmp)-minTRL+1));
+                cb = colorbar('eastoutside'); set(cb,'XTick',[minTRL numel(tmp)]-minTRL+1.5); set(cb,'XTickLabel',get(cb,'XTick')+minTRL-1.5);
+                title(ax,conds{c});
             end
-            set(condcountFig,'Renderer','zbuffer');
+            
             print(condcountFig,'-djpeg','-r300',condcountFn);
             close(condcountFig);
             aap=aas_report_addimage(aap,'er',condcountFn);
-            set(trialcountFig,'Renderer','zbuffer');
+
             print(trialcountFig,'-djpeg','-r150',trialcountFn);
             close(trialcountFig);
             aap=aas_report_addimage(aap,'er',trialcountFn);
