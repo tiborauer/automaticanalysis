@@ -154,7 +154,7 @@ switch task
                 data(cellfun(@isempty, {data.trial})) = []; % remove skipped segments
                 
                 % process events
-                kvs = regexp(spm_file(meegfn{1},'basename'),'[A-Z]+-[0-9]+','match');
+                kvs = unique(regexp(spm_file(meegfn,'basename'),'[A-Z]+-[0-9]+','match','once'));
                 events = cellfun(@(x) strsplit(x,'-'), kvs,'UniformOutput',false);
                 conEventsFreq = cell(1,numel(m.event.names));
                 conEventsBand = cell(1,numel(m.event.names));
