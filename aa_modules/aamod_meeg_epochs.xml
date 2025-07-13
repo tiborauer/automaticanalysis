@@ -24,6 +24,7 @@
                     <baselinewindow desc="specify baseline as [begin end] in milliseconds for baseline correction, can be 'all' for the whole epoch"></baselinewindow>
                 </event>
             </condition>
+            <eventmatch desc='save EEG with events from the same trials; cell array (eventmatches) of cell arrays (conditionlabel to match)'></eventmatch>
             
             <inputstreams>
                 <stream>meeg</stream>

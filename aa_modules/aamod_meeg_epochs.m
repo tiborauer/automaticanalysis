@@ -3,7 +3,7 @@ function [aap, resp] = aamod_meeg_epochs(aap,task,subj,sess)
 resp='';
 
 switch task
-    case 'report'
+    case 'report' % TODO - FIX for eventmatching
         [~, EL] = aas_cache_get(aap,'eeglab');
         
         MAXNTRIAL = 1000; % do not expect more than 1000 trials
@@ -399,15 +399,73 @@ switch task
                     end
                     
                     condfn = sprintf('%s-%d',ev.conditionlabel,get_eventvalue(ev.eventvalue));
-                    datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.set',condfn,seg));
                     datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.fdt',condfn,seg));
+                    datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.set',condfn,seg));                    
                     pop_saveset(epochEEG,datafn{end});                    
                 end
+                
+                % event matching
+                eventmatch = aas_getsetting(aap,'eventmatch');
+                eminfname = datafn(endsWith(datafn,sprintf('seg-%d.set',seg)));
+                for em = eventmatch
+                
+                    % eventvalues
+                    eventvalues = cellfun(@(ev) eventdef(strcmp({eventdef.conditionlabel},ev)).eventvalue, em{1}, 'UniformOutput', false);
+                    
+                    % data
+                    alleeg = cellfun(@(t) pop_loadset(eminfname{contains(eminfname, t)}), em{1});
+                
+                    if numel(alleeg) ~= numel(eventvalues), aas_log(aap,true,'All EEGs are expected to have a single condition'); end
+                    
+                    for indeeg = 1:numel(alleeg)
+                        % events
+                        selEv = [];
+                        evur = [alleeg(indeeg).event(strcmp({alleeg(indeeg).event.type}, eventvalues{indeeg})).urevent];
+                        urevur = find(strcmp({alleeg(indeeg).urevent.type},eventvalues{indeeg}));
+                        for otherind = setdiff(1:numel(alleeg),indeeg)
+                            othereegeventsel = strcmp({alleeg(otherind).event.type},eventvalues{otherind});
+                            othereegur = [alleeg(otherind).event(othereegeventsel).urevent];
+                            for ur = othereegur
+                                if strcmp(eventvalues{indeeg}, eventvalues{otherind})
+                                    selEv = [selEv find(evur == ur)];
+                                elseif otherind < indeeg
+                                    selEv = [selEv find(evur == urevur(find(urevur > ur, 1, 'first')))];
+                                elseif otherind > indeeg
+                                    selEv = [selEv find(evur == urevur(find(urevur < ur, 1, 'last')))];
+                                else
+                                    aas_log(aap,true,'Conditions not expected');
+                                end
+                            end
+                        end
+                        % - select event matched with all other EEGs
+                        selEv = tabulate(selEv);
+                        selEv = selEv(selEv(:,2) == (numel(alleeg)-1),1);
+                
+                        % epochs
+                        selEp = arrayfun(@(e) find(arrayfun(@(ep) any(getIfCellMat(ep.eventurevent)==alleeg(indeeg).event(e).urevent), alleeg(indeeg).epoch)), selEv); % assume one event-of-interest per epoch
+                
+                        % remove from EEG
+                        selEOI = find(strcmp({alleeg(indeeg).event.type}, eventvalues{indeeg}));
+                        alleeg(indeeg).event = alleeg(indeeg).event(selEOI(selEv));
+                        alleeg(indeeg).epoch = alleeg(indeeg).epoch(selEp);
+                        alleeg(indeeg).data = alleeg(indeeg).data(:,:,selEp);
+                    end
+                
+                    % save EEGs;
+                    for eeg = alleeg
+                        datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),['em-' strjoin(em{1},'-') '_' eeg.datfile]);
+                        datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),['em-' strjoin(em{1},'-') '_' eeg.filename]);
+                        pop_saveset(eeg,'filename',['em-' strjoin(em{1},'-') '_' eeg.filename],'filepath',eeg.filepath);
+                    end
+                end                
             end               
         end
         
         EL.unload;
         %% Describe outputs
+        if any(startsWith(spm_file(datafn,'basename'),'em')) % save only eventmatched
+            datafn = datafn(startsWith(spm_file(datafn,'basename'),'em'));
+        end
         aap = aas_desc_outputs(aap,subj,sess,'meeg',datafn);
     case 'checkrequirements'
         if ~aas_cache_get(aap,'eeglab'), aas_log(aap,true,'EEGLAB is not found'); end
@@ -468,4 +526,8 @@ else
     e.urevent = indUre;
     EEG.event = [EEG.event(1:indRej(nRej)) e EEG.event(indRej(nRej)+1:end)];
 end
+end
+
+function val = getIfCellMat(val)
+    if iscell(val), val = cell2mat(val); end
 end
