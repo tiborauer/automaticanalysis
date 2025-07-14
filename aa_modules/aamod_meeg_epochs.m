@@ -320,7 +320,27 @@ switch task
                             urLat = [epochEEG.urevent(urSel).latency];
                             urWin = arrayfun(@(ul) ul+ev.eventwindow+ev.trlshift ,urLat ,'UniformOutput' ,false);
                             urLat = [epochEEG.urevent(urSel(cellfun(@(uw) all(epochEEG.etc.clean_sample_mask(uw(1):uw(2))), urWin))).latency];
-                            if numel(urLat) ~= epochEEG.trials, aas_log(aap,true,'Not all epochs found'); end
+                            if numel(urLat) > epochEEG.trials
+                                aas_log(aap,false,'Excessive events');
+                                urInd = 0;
+                                for ep = 1:epochEEG.trials
+                                    if isempty(epochEEG.epoch(ep).eventurevent)
+                                        urInd(end+1) = urInd(end)+1;
+                                        continue
+                                    end
+                                    if iscell(epochEEG.epoch(ep).eventurevent)
+                                        epWin = ev.eventwindow + epochEEG.urevent(epochEEG.epoch(ep).eventurevent{1}).latency - epochEEG.epoch(ep).eventlatency{1};
+                                        urInd(end+1) = find(arrayfun(@(lat) (epWin(1) <= lat) && (epWin(2) >= lat), urLat));
+                                    else
+                                        epWin = ev.eventwindow + epochEEG.urevent(epochEEG.epoch(ep).eventurevent).latency - epochEEG.epoch(ep).eventlatency;
+                                        urInd(end+1) = find(arrayfun(@(lat) (epWin(1) <= lat) && (epWin(2) >= lat), urLat));
+                                    end
+                                end
+                                urInd(1) = [];
+                                urLat = urLat(urInd);
+                            elseif numel(urLat) < epochEEG.trials
+                                aas_log(aap,true,'Missing events');
+                            end
 
                             urLat = urLat(missingEp);
                             [~, urInd] = intersect([epochEEG.urevent.latency], urLat);
@@ -421,7 +441,7 @@ switch task
                             indEp = find(arrayfun(@(ep) any(getIfCellMat(ep.eventurevent) == alleeg(indeeg).event(indE).urevent), alleeg(indeeg).epoch));
                             alleeg(indeeg).event(indE).epoch = indEp;
                             indEvinEp = strcmp(cellstr(alleeg(indeeg).epoch(indEp).eventtype), eventvalues{indeeg});
-                            alleeg(indeeg).epoch(indEp) = struct(...
+                            currEp = struct(...
                                 'event', indE,...
                                 'eventtype', alleeg(indeeg).event(indE).type,...
                                 'eventduration',1,...
@@ -429,6 +449,7 @@ switch task
                                 'eventlatency',getIfCellMat(alleeg(indeeg).epoch(indEp).eventlatency,indEvinEp),...
                                 'eventurevent',alleeg(indeeg).event(indE).urevent...
                                 );
+                            alleeg(indeeg).epoch(indEp) = rmfield(currEp,setdiff(fieldnames(currEp),fieldnames(alleeg(indeeg).epoch)));
                         end
                     end
                 
