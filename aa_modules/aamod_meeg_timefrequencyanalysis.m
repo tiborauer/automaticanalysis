@@ -90,7 +90,7 @@ switch task
                 switch spm_file(meegfn{1},'ext')
                     case 'mat'
                         filetype = 'fieldtrip';
-                    case 'set' 
+                    case {'fdt' 'set'}
                         filetype = 'eeglab';
                         meegfn = meegfn(strcmp(spm_file(meegfn,'ext'),'set'));
                     otherwise
