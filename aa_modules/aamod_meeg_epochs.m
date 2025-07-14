@@ -313,64 +313,33 @@ switch task
 
                     % Inster event-of-interest outside eventwindow as event with 0 latency
                     if aas_getsetting(aap,'ensurefieldtripcompatibility')
-                        if (ev.eventwindow(1) + ev.trlshift) > 0 % eventwindow after the event
-                            urevent = nan(1,epochEEG.trials);
-                            for ep = 1:epochEEG.trials
-                                if isempty(epochEEG.epoch(ep).event)
-                                    e_pre = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(1:ep-1)),1,'last');
-                                    % no previous event
-                                    if isempty(e_pre), ur_pre = 1;
-                                    else
-                                        ur_pre = epochEEG.epoch(e_pre).eventurevent(end);
-                                        try ur_pre = double(ur_pre); catch, ur_pre = ur_pre{1}; end
-                                    end
-                                    
-                                    e_post = find(arrayfun(@(xe) ~isempty(xe.event),epochEEG.epoch(ep+1:end)),1,'first');
-                                    % no posterior event
-                                    if isempty(e_post), ur_post = numel(epochEEG.urevent);
-                                    else
-                                        ur_post = epochEEG.epoch(ep+e_post).eventurevent(1);
-                                        try ur_post = double(ur_post); catch, ur_post = ur_post{1}; end
-                                    end
-                                    
-                                    n_ur = ur_pre - 1 + find(strcmp({epochEEG.urevent(ur_pre:ur_post).type},ev.eventvalue));
-                                    if ~isempty(e_post), n_ur(end) = []; end % last event belongs to the next epoch if there is one
-                                    isUr = arrayfun(@(n) all(epochEEG.etc.clean_sample_mask(epochEEG.urevent(n).latency+epochEEG.xmin*1000:epochEEG.urevent(n).latency+epochEEG.xmax*1000)), n_ur);
-                                    switch sum(isUr)
-                                        case 1
-                                            urevent(ep) = n_ur(isUr);
-                                        case 0
-                                            aas_log(aap,true,['No clean epoch with event ' ev.eventvalue ' at t=0 found']);
-                                        otherwise
-                                            aas_log(aap,false,['Mutliple clean epochs with event ' ev.eventvalue ' at t=0 found -> selecting the first']);
-                                            urevent(ep) = n_ur(find(isUr,1,'first'));
-                                    end
+                        missingEp = arrayfun(@(ep) isempty(ep.eventtype) || ~any(strcmp(cellstr(ep.eventtype), ev.eventvalue)), epochEEG.epoch);
+                        if any(missingEp)
+                            % find valid epochs
+                            urSel = find(strcmp({epochEEG.urevent.type}, ev.eventvalue));
+                            urLat = [epochEEG.urevent(urSel).latency];
+                            urWin = arrayfun(@(ul) ul+ev.eventwindow+ev.trlshift ,urLat ,'UniformOutput' ,false);
+                            urLat = [epochEEG.urevent(urSel(cellfun(@(uw) all(epochEEG.etc.clean_sample_mask(uw(1):uw(2))), urWin))).latency];
+                            if numel(urLat) ~= epochEEG.trials, aas_log(aap,true,'Not all epochs found'); end
 
-                                else                         
-                                    if iscell(epochEEG.epoch(ep).eventlatency)
-                                        lat = epochEEG.epoch(ep).eventlatency{1};
-                                        urind = epochEEG.epoch(ep).eventurevent{1};                                
-                                    else
-                                        lat = epochEEG.epoch(ep).eventlatency;
-                                        urind = epochEEG.epoch(ep).eventurevent;                                
-                                    end
-                                    urevent(ep) = find([epochEEG.urevent.latency] == (epochEEG.urevent(urind).latency - lat));
-                                end
-                            end
-    
+                            urLat = urLat(missingEp);
+                            [~, urInd] = intersect([epochEEG.urevent.latency], urLat);
+                            evLat = (0:diff(epochEEG.times([1 end]))+1:(epochEEG.trials-1)*(diff(epochEEG.times([1 end]))+1))-epochEEG.times(1)+1;
+                            evLat = evLat(missingEp);
+
                             % update events
-                            ev_insert = struct(...
+                            evInsert = struct(...
                                 'type', ev.eventvalue,...
                                 'duration', 1,...
                                 'timestamp', [],...
-                                'latency', num2cell((0:diff(epochEEG.times([1 end]))+1:(epochEEG.trials-1)*(diff(epochEEG.times([1 end]))+1))-epochEEG.times(1)+1),...
-                                'urevent', num2cell(urevent),...
+                                'latency', num2cell(evLat),...
+                                'urevent', num2cell(reshape(urInd,size(urLat))),...
                                 'epoch', num2cell(1:epochEEG.trials)...
                                 );
-                            ev_insert = rmfield(ev_insert,setdiff(fieldnames(ev_insert),fieldnames(epochEEG.event)));
-                            [~, ~, sortInd] = intersect({'epoch' 'latency'},fieldnames(ev_insert));
-                            epochEEG.event = table2struct(sortrows(struct2table([ev_insert epochEEG.event]),sortInd))';
-    
+                            evInsert = rmfield(evInsert,setdiff(fieldnames(evInsert),fieldnames(epochEEG.event)));
+                            [~, ~, sortInd] = intersect({'epoch' 'latency'},fieldnames(evInsert));
+                            epochEEG.event = table2struct(sortrows(struct2table([evInsert epochEEG.event]),sortInd))';
+
                             % update epochs
                             for ep = 1:epochEEG.trials
                                 indE = find([epochEEG.event.epoch] == ep);
@@ -380,7 +349,7 @@ switch task
                                         'eventtype', epochEEG.event(indE).type,...
                                         'eventduration',1,...
                                         'eventtimestamp',[],...
-                                        'eventlatency',epochEEG.event(indE).latency+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1),...
+                                        'eventlatency',round(epochEEG.event(indE).latency+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1)),...
                                         'eventurevent',epochEEG.event(indE).urevent...
                                         );
                                 else
@@ -388,13 +357,10 @@ switch task
                                     epochEEG.epoch(ep).eventtype= {epochEEG.event(indE).type};
                                     epochEEG.epoch(ep).eventduration = repmat({1},1,numel(indE));
                                     epochEEG.epoch(ep).eventtimestamp = repmat({[]},1,numel(indE));
-                                    epochEEG.epoch(ep).eventlatency = num2cell([epochEEG.event(indE).latency]+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1));
+                                    epochEEG.epoch(ep).eventlatency = num2cell(round([epochEEG.event(indE).latency]+epochEEG.xmin*1000-1-(ep-1)*((epochEEG.xmax-epochEEG.xmin)*1000+1)));
                                     epochEEG.epoch(ep).eventurevent = {epochEEG.event(indE).urevent};
                                 end
-                            end
-    
-                        elseif (ev.eventwindow(2) + ev.trlshift) < 0 % eventwindow before the event
-                            aas_log(aap,1,'NYI')
+                            end                            
                         end
                     end
                     
@@ -429,26 +395,41 @@ switch task
                                 if strcmp(eventvalues{indeeg}, eventvalues{otherind})
                                     selEv = [selEv find(evur == ur)];
                                 elseif otherind < indeeg
-                                    selEv = [selEv find(evur == urevur(find(urevur > ur, 1, 'first')))];
+                                    try selEv = [selEv find(evur == urevur(find(urevur > ur, 1, 'first')))]; catch, end
                                 elseif otherind > indeeg
-                                    selEv = [selEv find(evur == urevur(find(urevur < ur, 1, 'last')))];
+                                    try selEv = [selEv find(evur == urevur(find(urevur < ur, 1, 'last')))]; catch, end
                                 else
                                     aas_log(aap,true,'Conditions not expected');
                                 end
                             end
                         end
                         % - select event matched with all other EEGs
+                        selEOI = find(strcmp({alleeg(indeeg).event.type}, eventvalues{indeeg}));
                         selEv = tabulate(selEv);
                         selEv = selEv(selEv(:,2) == (numel(alleeg)-1),1);
                 
                         % epochs
-                        selEp = arrayfun(@(e) find(arrayfun(@(ep) any(getIfCellMat(ep.eventurevent)==alleeg(indeeg).event(e).urevent), alleeg(indeeg).epoch)), selEv); % assume one event-of-interest per epoch
+                        selEp = arrayfun(@(e) find(arrayfun(@(ep) any(getIfCellMat(ep.eventurevent)==alleeg(indeeg).event(selEOI(e)).urevent), alleeg(indeeg).epoch)), selEv); % assume one event-of-interest per epoch
                 
-                        % remove from EEG
-                        selEOI = find(strcmp({alleeg(indeeg).event.type}, eventvalues{indeeg}));
+                        % remove from EEG                        
                         alleeg(indeeg).event = alleeg(indeeg).event(selEOI(selEv));
                         alleeg(indeeg).epoch = alleeg(indeeg).epoch(selEp);
                         alleeg(indeeg).data = alleeg(indeeg).data(:,:,selEp);
+
+                        % re-index events with epochs
+                        for indE = 1:numel(alleeg(indeeg).event)                            
+                            indEp = find(arrayfun(@(ep) any(getIfCellMat(ep.eventurevent) == alleeg(indeeg).event(indE).urevent), alleeg(indeeg).epoch));
+                            alleeg(indeeg).event(indE).epoch = indEp;
+                            indEvinEp = strcmp(cellstr(alleeg(indeeg).epoch(indEp).eventtype), eventvalues{indeeg});
+                            alleeg(indeeg).epoch(indEp) = struct(...
+                                'event', indE,...
+                                'eventtype', alleeg(indeeg).event(indE).type,...
+                                'eventduration',1,...
+                                'eventtimestamp',[],...
+                                'eventlatency',getIfCellMat(alleeg(indeeg).epoch(indEp).eventlatency,indEvinEp),...
+                                'eventurevent',alleeg(indeeg).event(indE).urevent...
+                                );
+                        end
                     end
                 
                     % save EEGs;
@@ -528,6 +509,7 @@ else
 end
 end
 
-function val = getIfCellMat(val)
+function val = getIfCellMat(val, ind)
     if iscell(val), val = cell2mat(val); end
+    if nargin > 1, val = val(ind); end
 end
