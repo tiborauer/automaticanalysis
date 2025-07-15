@@ -3,15 +3,15 @@ function [aap, resp] = aamod_meeg_epochs(aap,task,subj,sess)
 resp='';
 
 switch task
-    case 'report' % TODO - FIX for eventmatching
+    case 'report'
         [~, EL] = aas_cache_get(aap,'eeglab');
         
         MAXNTRIAL = 1000; % do not expect more than 1000 trials
         
         outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg','output'));
         outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
-        segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
-        conds = regexp(spm_file(outfname,'basename'),'(?<=_)[A-Z-0-9]+','match','once');
+        segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);        
+        conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');
         condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);
         
         % init summary
@@ -29,11 +29,14 @@ switch task
         end
         for c = 1:numel(conds)
             subjtrials{c} = logical(sparse(numel(segments),MAXNTRIAL));
-            for s = segments            
-                eeg = pop_loadset('filepath',aas_getpath_bydomain(aap,'meeg_session',[subj sess]),'filename',sprintf(['epochs_' conds{c} '_seg-%d.set'],s));
+            for s = segments   
+                segoutfname = outfname(endsWith(spm_file(outfname,'basename'),sprintf('seg-%d',s)));
+                if numel(segoutfname) ~= numel(conds), aas_log(aap,true,'All segments MUST have all conditions'); end
+
+                eeg = pop_loadset(segoutfname{c});
                 
                 trials = struct2table(rmfield(eeg.event,intersect(fieldnames(eeg.event),{'duration' 'timestamp' 'latency' 'epoch'})));
-                trials.type = cellfun(@get_eventvalue, trials.type);
+                trials.type = cellfun(@get_eventvalue, cellstr(trials.type));
                 trials(trials.type ~= condnum(c),:) = [];
 
                 utrials = cellfun(@get_eventvalue, {eeg.urevent.type})';
