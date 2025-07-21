@@ -17,6 +17,8 @@
                 <spectralsmoothing desc='the amount of spectral smoothing specifed as a ratio relative to frequencies of interest (i.e. increasing with frequencies of interest)'></spectralsmoothing>
             </timefrequencyanalysis>
 
+            <subtracterp desc='subtract ERP spectra'>0</subtracterp>
+
             <weightedaveraging desc='weight data with trial number when averaging'>0</weightedaveraging>
             
             <contrastoperation desc='operation to calculate contrast (see ft_combine)' options='difference|normaliseddifference|ratio' ui='optionlist'>difference</contrastoperation>

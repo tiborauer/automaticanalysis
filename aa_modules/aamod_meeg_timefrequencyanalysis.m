@@ -183,12 +183,29 @@ switch task
                             cfg.t_ftimwin = (data(i).time{1}(end)-data(i).time{1}(1))*ones(1,numel(cfg.foi));
                         end
                         tf{end+1} = ft_freqanalysis(cfg, data(i));
+                        
                         % baseline correction
                         if ~isempty(baswin)
                             lbc = tf{end}.labelcmb;
-                            tf{end} = ft_freqbaseline(bccfg,tf{end}); 
+                            tf{end} = ft_freqbaseline(bccfg,tf{end});
                             tf{end}.labelcmb = lbc;
                         end
+                        
+                        % subtract ERP spectra
+                        if aas_getsetting(aap, 'subtracterp')
+                            tfdata_tl = ft_freqanalysis(rmfield(cfg,'trials'),...
+                                ft_timelockanalysis(keepfields(cfg,'trials'), data(i)));
+                            if ~isempty(baswin)
+                                lbc = tfdata_tl.labelcmb;
+                                tfdata_tl = ft_freqbaseline(bccfg,tfdata_tl);
+                                tfdata_tl.labelcmb = lbc;
+                            end
+                           
+                            cfg = combinecfg;
+                            cfg.weights = [1 -1];
+                            tf{end} = ft_combine(cfg,tf{end}, tfdata_tl);
+                        end
+
                         if aas_getsetting(aap,'weightedaveraging')
                             weights(end+1) = numel(cfg.trials);
                         else
