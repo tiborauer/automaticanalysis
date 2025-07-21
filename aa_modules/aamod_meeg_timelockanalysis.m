@@ -21,7 +21,7 @@ switch task
         
         aap = aas_report_add(aap,subj,'</tr></table>');
     case 'doit'
-        [junk, FT] = aas_cache_get(aap,'fieldtrip');
+        [~, FT] = aas_cache_get(aap,'fieldtrip');
         FT.load;
         FT.addExternal('spm12');
         
@@ -52,12 +52,15 @@ switch task
                 switch spm_file(meegfn{1},'ext')
                     case 'mat'
                         filetype = 'fieldtrip';
-                    case 'set' 
+                    case {'fdt' 'set'}
                         filetype = 'eeglab';
                         meegfn = meegfn(strcmp(spm_file(meegfn,'ext'),'set'));
                     otherwise
                         aas_log(aap,true,'Unsupported file format')
                 end
+
+                % - select only data with event-of-interest
+                meegfn = meegfn(cellfun(@(f) any(cellfun(@(e) contains(f,e),m.event.names)), meegfn));                
                 for seg = 1:numel(meegfn)
                     switch filetype
                         case 'fieldtrip'
@@ -65,11 +68,10 @@ switch task
                             data(seg) = dat.data;
                         case 'eeglab'
                             FT.unload;
-                            if seg == 1
-                                [junk, EL] = aas_cache_get(aap,'eeglab');
-                                EL.load;
-                            else
-                                EL.reload;
+                            if ~exist('EL','var'), [~, EL] = aas_cache_get(aap,'eeglab'); end
+                            switch EL.status
+                                case 'defined', EL.load;
+                                case 'unloaded', EL.reload;
                             end
                             EEG = pop_loadset('filepath',spm_file(meegfn{seg},'path'),'filename',spm_file(meegfn{seg},'filename'));
                             EL.unload;
@@ -79,7 +81,7 @@ switch task
                 end
                 
                 % process events
-                kvs = regexp(spm_file(meegfn{1},'basename'),'[A-Z]+-[0-9]+','match');
+                kvs = unique(regexp(spm_file(meegfn,'basename'),'[A-Z]+-[0-9]+','match','once'));
                 events = cellfun(@(x) strsplit(x,'-'), kvs,'UniformOutput',false);
                 conEvents = cell(1,numel(m.event.names));
                 
@@ -108,7 +110,7 @@ switch task
                     cfg.weights = weights;
                     timelockMain = ft_combine(cfg,tl{:});
                     
-                    diagFn = fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '_' eventLabel]);
+                    diagFn = fullfile(aas_getsesspath(aap,subj,sessnum),['diagnostic_' mfilename '_' eventLabel]);
                     if ~exist([diagFn '_multiplot.jpg'],'file')
                         meeg_diagnostics_ER(timelockMain,diag,eventLabel,diagFn);
                     end
@@ -145,7 +147,7 @@ switch task
                         timelockModel = ft_combine(cfg,tl{:});
                     end
                           
-                    meeg_diagnostics_ER(timelockModel,diag,[m.name '_' eventLabel],fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename  '_' m.name '_' eventLabel]));
+                    meeg_diagnostics_ER(timelockModel,diag,[m.name '_' eventLabel],fullfile(aas_getsesspath(aap,subj,sessnum),['diagnostic_' mfilename  '_' m.name '_' eventLabel]));
 
                     conEvents{e} = timelockModel;
                     timelock.(eventLabel).main = timelockMain;
@@ -157,10 +159,10 @@ switch task
                 cfg = combinecfg; 
                 cfg.weights = m.event.weights;
                 timelock = ft_combine(cfg,conEvents{:});
-                meeg_diagnostics_ER(timelock,diag,m.name,fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename  '_' m.name '_eventcontrast']));
+                meeg_diagnostics_ER(timelock,diag,m.name,fullfile(aas_getsesspath(aap,subj,sessnum),['diagnostic_' mfilename  '_' m.name '_eventcontrast']));
   
                 % save/update output
-                timelockFn = fullfile(aas_getsesspath(aap,subj,sess),['timelock_' m.name '.mat']);
+                timelockFn = fullfile(aas_getsesspath(aap,subj,sessnum),['timelock_' m.name '.mat']);
                 save(timelockFn,'timelock');
                 
                 % append to stream
@@ -170,7 +172,7 @@ switch task
                     outputFn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj, sessnum],'timelock','output'));
                 end
                 outputFn{end+1} = timelockFn;
-                aap = aas_desc_outputs(aap,'meeg_session',[subj,sess],'timelock',outputFn);
+                aap = aas_desc_outputs(aap,'meeg_session',[subj,sessnum],'timelock',outputFn);
                 
                 conSessions{sess} = timelock;
             end            
