@@ -1,3 +1,6 @@
+# freq_range 2.000 40.000 --aperiodic_mode fixed /projects/eeg/aa_restingstate/aamod_meeg_fooof_00001/sub-057533/timefreq_RS1.mat /projects/eeg/aa_restingstate/aamod_meeg_fooof_00001/sub-057533/fooof_timefreq_RS1
+
+
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from numpy import prod, squeeze
 from scipy.io import loadmat, savemat
@@ -23,7 +26,7 @@ args = parser.parse_args()
 print(args.freq_range)
 
 data = loadmat(args.inputfilename)
-channels = [dat[0] for dat in unpack(data['timefreq']['label'])]
+channels = [dat[0] for dat in unpack(data[args.varname]['label'])]
 freqs = unpack(data[args.varname]['freq']).astype('float')
 psds = unpack(data[args.varname]['powspctrm']).astype('float')
 
@@ -32,12 +35,15 @@ fm.print_settings()
 
 aperiodic = {}
 peaks = {}
+r_squared = {}
 for ch in range(len(channels)):
     fm.fit(freqs,psds[ch,],args.freq_range)
     # fm.save_report(file_name=filename.stem.replace('freq','fooof_report'), file_path=filename.parent)
     aperiodic[channels[ch]] = fm.get_results().aperiodic_params
     peaks[channels[ch]] = fm.get_results().peak_params
+    r_squared[channels[ch]] = fm.get_results().r_squared
 
 savemat(args.outputbasename + '_aperiodic.mat',aperiodic)
 savemat(args.outputbasename + '_peaks.mat',peaks)
+savemat(args.outputbasename + '_rsquared.mat',r_squared)
 

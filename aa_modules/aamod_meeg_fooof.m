@@ -25,13 +25,15 @@ switch task
 
             % Save into FT data structure
             load(fnTF{1},'timefreq');
+            r2 = load(spm_file(fnTF{1},'prefix','fooof_','suffix','_rsquared','ext',''));
 
             % - aperiodic
             ap = load(spm_file(fnTF{1},'prefix','fooof_','suffix','_aperiodic','ext',''));
             fooof = keepfields(timefreq,{'label' 'elec'});
             fooof.dimord = 'chan';
+            fooof.r2 = cellfun(@(ch) r2.(ch), fooof.label);
             fooof.offset = cellfun(@(ch) ap.(ch)(1), fooof.label);
-            fooof.exp = cellfun(@(ch) ap.(ch)(2), fooof.label);
+            fooof.exp = cellfun(@(ch) ap.(ch)(2), fooof.label);            
             save(spm_file(fnTF{1},'prefix','fooof_','suffix','_aperiodic','ext',''),'fooof');
 
             % - peaks
@@ -40,6 +42,7 @@ switch task
             fooof.dimord = 'chan_band';
             fooof.bandspec = aas_getsetting(aap,'bandspec');
             fooof.band = fieldnames(fooof.bandspec);
+            fooof.r2 = cellfun(@(ch) r2.(ch), fooof.label);
             fooof.peakfreq = cell(0,0);
             fooof.peakbandwidth = cell(0,0);
             fooof.peakpower = cell(0,0);
