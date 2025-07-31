@@ -119,9 +119,19 @@ for k = stageindices
         
         % build dependency
         [dep, domaintree] = aas_dependencytree_allfromtrunk(curr_aap,domain);
+        depind = cell2mat(cellfun(@(c) c{2}, dep, 'UniformOutput', false));
+        doSummary = ~isempty(depind) && numel(unique(depind(:,1))) > 1;
         
         % Set inSession flag
-        inSession = (numel(domaintree) >= 2) & ~isempty(strfind(domain,'session'));
+        inSession = (numel(domaintree) >= 2) & contains(domain,'session');
+        
+        % Last subject (for each session)
+        if inSession
+            depcombind = prod(depind,2);
+            lastDep = arrayfun(@(s) [depind(depcombind==max(depcombind(depind(:,2)==s)),1) s], unique(depind(:,2)), 'UniformOutput', false);
+        elseif ~isempty(depind)
+            lastDep = {depind(end)};
+        end
 
         % run through
         for d = 1:numel(dep)
@@ -133,7 +143,7 @@ for k = stageindices
             if inSession
                 sessdomain = domain;
                 if numel(domaintree) > 2, sessdomain = domaintree{2}; end
-                [junk, iSess] = aas_getN_bydomain(curr_aap,sessdomain,subj);
+                [~, iSess] = aas_getN_bydomain(curr_aap,sessdomain,subj);
                 firstSess = iSess(1);
                 lastSess = iSess(end);
             end
@@ -167,6 +177,9 @@ for k = stageindices
                 run_aap.prov = aap.prov;
          
                 run_aap = aa_feval_withindices(mfile_alias,run_aap,'report',indices);
+                if doSummary && any(cellfun(@(ld) isequal(dep{d}{2}, ld), lastDep))
+                    run_aap = aa_feval_withindices(mfile_alias,run_aap,'summary',indices);
+                end
                 
                 % save report
                 aap.report = run_aap.report;

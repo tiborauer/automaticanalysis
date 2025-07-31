@@ -51,5 +51,5 @@ switch task
     case 'checkrequirements'
         if ~aas_cache_get(aap,'spm'), aas_log(aap,true,'SPM is not found'); end
     otherwise
-        aas_log(aap,1,sprintf('Unknown task %s',task));
+        aas_log(aap, 0, sprintf('%s: Unknown task %s',mfilename, task));
 end

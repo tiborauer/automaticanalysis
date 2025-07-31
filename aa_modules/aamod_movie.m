@@ -24,5 +24,5 @@ switch task
     case 'checkrequirements'
         
     otherwise
-        aas_log(aap,1,sprintf('Unknown task %s',task));
+        aas_log(aap, 0, sprintf('%s: Unknown task %s',mfilename, task));
 end;

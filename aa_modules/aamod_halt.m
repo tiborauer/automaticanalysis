@@ -19,7 +19,7 @@ switch task
 		        
     otherwise
         
-        aas_log(aap, true, sprintf('%s:Unknown task %s', mfilename, task));
+        aas_log(aap, 0, sprintf('%s: Unknown task %s',mfilename, task));
 		
 end
 

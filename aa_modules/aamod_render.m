@@ -325,7 +325,7 @@ switch task
         end
         
     otherwise
-        aas_log(aap,true,sprintf('Unknown task %s', task));
+        aas_log(aap, 0, sprintf('%s: Unknown task %s',mfilename, task));
         
 
 end % task switch

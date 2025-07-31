@@ -95,7 +95,7 @@ switch task
             aas_log(aap,1,'To avoid catastrophe, slice order no longer takes on a default value, and must be specified manually in user script.\nFor descending sequential 32 slices add aap.tasksettings.aamod_slicetiming.sliceorder=[32:-1:1];\n');
         end
     otherwise
-        aas_log(aap,1,sprintf('Unknown task %s',task));
+        aas_log(aap, 0, sprintf('%s: Unknown task %s',mfilename, task));
 end
 return;
 end

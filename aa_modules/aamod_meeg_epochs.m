@@ -91,15 +91,19 @@ switch task
         aap = aas_report_add(aap,subj,'</table>');
         condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
         aap.report.(mfilename).condcount{subj,sess} = condcount;
-        
-        %% Summary in case of more subjects
-        if (subj > 1) && (subj == numel(aap.acq_details.subjects)) % last subject
+               
+    case 'summary'        
             % missing data
             isTrialMissing = cellfun(@isempty, aap.report.(mfilename).alltrials(:,sess));
             isCondcountMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(mfilename).condcount(:,sess));
             lastSubjCondcount = find(~isCondcountMissing,1,'last');
 
-            [~, iSess] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,subj);
+            % update conditions and sessions based on the last subject with no missing data
+            outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[lastSubjCondcount sess],'meeg','output'));
+            outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
+            segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
+            conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');
+            [~, iSess] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
             firstSess = iSess(1);
             lastSess = iSess(end);
             
@@ -190,7 +194,6 @@ switch task
             aap = aas_report_add(aap,'er','</td>');
             
             if sess == lastSess, aap = aas_report_add(aap,'er','</tr></table>'); end
-        end
 
     case 'doit'
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
