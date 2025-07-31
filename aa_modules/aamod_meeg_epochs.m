@@ -102,12 +102,10 @@ switch task
             outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[lastSubjCondcount sess],'meeg','output'));
             outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
             segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
-            conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');
-            [~, iSess] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
-            firstSess = iSess(1);
-            lastSess = iSess(end);
+            conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');            
             
-            if sess == firstSess
+            if ~isfield(aap.report.(mfilename),'summarysessions')                                
+                [~, aap.report.(mfilename).summarysessions] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
                 stagerepname = aap.tasklist.currenttask.name;
                 if ~isempty(aap.tasklist.currenttask.extraparameters)
                     stagerepname = [stagerepname aap.tasklist.currenttask.extraparameters.aap.directory_conventions.analysisid_suffix];
@@ -115,6 +113,7 @@ switch task
                 aap = aas_report_add(aap,'er',['<h2>Stage: ' stagerepname '</h2>']);
                 aap = aas_report_add(aap,'er','<table><tr>');
             end
+            aap.report.(mfilename).summarysessions = setdiff(aap.report.(mfilename).summarysessions,sess);
             
             aap = aas_report_add(aap,'er','<td valign="top">');
             aap = aas_report_add(aap,'er',['<h3>Session: ' aap.acq_details.meeg_sessions(sess).name '</h3>']);
@@ -192,8 +191,8 @@ switch task
             end
             aap = aas_report_add(aap,'er','</table>');
             aap = aas_report_add(aap,'er','</td>');
-            
-            if sess == lastSess, aap = aas_report_add(aap,'er','</tr></table>'); end
+                        
+            if isempty(aap.report.(mfilename).summarysessions), aap = aas_report_add(aap,'er','</tr></table>'); end
 
     case 'doit'
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
