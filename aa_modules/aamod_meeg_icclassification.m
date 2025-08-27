@@ -75,8 +75,7 @@ switch task
             print(f,'-noui',fullfile(aas_getsesspath(aap,subj,sess),sprintf('diagnostic_%s_%s_IC%03d.jpg',mfilename,sfx{any(finalIcIdx==ic)+1},ic)),'-djpeg','-r300');
             close(f);
         end
-        
-        EEG = pop_subcomp(EEG, finalIcIdx, 0, 1);
+        if numel(finalIcIdx) < size(EEG.icaweights,1), EEG = pop_subcomp(EEG, finalIcIdx, 0, 1); end
         if size(EEG.etc.ic_classification.ICLabel.classifications,1) == size(EEG.icaweights,2) % EEGLAB <2021.0 does not adjust etc
             EEG.etc.ic_classification.ICLabel.classifications = EEG.etc.ic_classification.ICLabel.classifications(finalIcIdx,:);
         end
