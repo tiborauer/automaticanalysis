@@ -78,25 +78,25 @@ global aaparallel;
 
 if nargin < 2
     style='text';
-end;
+end
 
 % output to screen
-if ~isempty(strfind(msg,'parallel-manage-workers'))
+if contains(msg,'parallel-manage-workers')
     pmw_log.msg=msg;
-    pmw_log.when=clock;
+    pmw_log.when=datetime('now');
     if ~isfield(aaparallel,'manage_workers_log')
         aaparallel.manage_workers_log=pmw_log;
     else
         aaparallel.manage_workers_log(end+1)=pmw_log;
-    end;
+    end
 else
     % no colours when deployed... (or when on command line)
     if isdeployed || ~usejava('desktop') || ~exist('cprintf','file')
         fprintf(msg);
     else
         cprintf(style,msg);
-    end;
-end;
+    end
+end
 % and to worker file?
 global aaworker
 if isfield(aaworker,'logname')
@@ -105,5 +105,5 @@ if isfield(aaworker,'logname')
     fprintf(fid,msg);
     fclose(fid);
     if isfield(aaworker,'master'), aas_propagateto(aaworker.master.hostname,aaworker.logname); end
-end;
+end
 end
