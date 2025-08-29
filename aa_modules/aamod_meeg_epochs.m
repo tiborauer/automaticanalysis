@@ -16,9 +16,9 @@ switch task
         
         % init summary
         % - first session
-        if ~isfield(aap.report, mfilename)
-            aap.report.(mfilename).alltrials = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
-            aap.report.(mfilename).condcount = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
+        if ~isfield(aap.report, aap.tasklist.currenttask.name)
+            aap.report.(aap.tasklist.currenttask.name).alltrials = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
+            aap.report.(aap.tasklist.currenttask.name).condcount = cell(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
         end
         
         %% Individual
@@ -70,7 +70,7 @@ switch task
             close(f);
         end
         aap=aas_report_addimage(aap,subj,fn);
-        aap.report.(mfilename).alltrials{subj,sess} = subjtrials;
+        aap.report.(aap.tasklist.currenttask.name).alltrials{subj,sess} = subjtrials;
         
         % table
         aap = aas_report_add(aap,subj,'<table id="data"><tr>');
@@ -90,12 +90,12 @@ switch task
         end
         aap = aas_report_add(aap,subj,'</table>');
         condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
-        aap.report.(mfilename).condcount{subj,sess} = condcount;
+        aap.report.(aap.tasklist.currenttask.name).condcount{subj,sess} = condcount;
                
     case 'summary'        
             % missing data
-            isTrialMissing = cellfun(@isempty, aap.report.(mfilename).alltrials(:,sess));
-            isCondcountMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(mfilename).condcount(:,sess));
+            isTrialMissing = cellfun(@isempty, aap.report.(aap.tasklist.currenttask.name).alltrials(:,sess));
+            isCondcountMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(aap.tasklist.currenttask.name).condcount(:,sess));
             lastSubjCondcount = find(~isCondcountMissing,1,'last');
 
             % update conditions and sessions based on the last subject with no missing data
@@ -104,8 +104,8 @@ switch task
             segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
             conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');            
             
-            if ~isfield(aap.report.(mfilename),'summarysessions')                                
-                [~, aap.report.(mfilename).summarysessions] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
+            if ~isfield(aap.report.(aap.tasklist.currenttask.name),'summarysessions')                                
+                [~, aap.report.(aap.tasklist.currenttask.name).summarysessions] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
                 stagerepname = aap.tasklist.currenttask.name;
                 if ~isempty(aap.tasklist.currenttask.extraparameters)
                     stagerepname = [stagerepname aap.tasklist.currenttask.extraparameters.aap.directory_conventions.analysisid_suffix];
@@ -113,7 +113,7 @@ switch task
                 aap = aas_report_add(aap,'er',['<h2>Stage: ' stagerepname '</h2>']);
                 aap = aas_report_add(aap,'er','<table><tr>');
             end
-            aap.report.(mfilename).summarysessions = setdiff(aap.report.(mfilename).summarysessions,sess);
+            aap.report.(aap.tasklist.currenttask.name).summarysessions = setdiff(aap.report.(aap.tasklist.currenttask.name).summarysessions,sess);
             
             aap = aas_report_add(aap,'er','<td valign="top">');
             aap = aas_report_add(aap,'er',['<h3>Session: ' aap.acq_details.meeg_sessions(sess).name '</h3>']);
@@ -121,10 +121,10 @@ switch task
             % Boxplot for each condition
             jitter = 0.1; % jitter around position
             jitter = (...
-                1+(rand([sum(~isCondcountMissing),size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)])-0.5) .* ...
-                repmat(jitter*2./[1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1)...
+                1+(rand([sum(~isCondcountMissing),size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)])-0.5) .* ...
+                repmat(jitter*2./[1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1)...
                 ) .* ...
-                repmat([1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1);
+                repmat([1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1);
 
             condcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_conditioncount.jpg']);
             condcountFig = figure; condcountFig.Position = [0 0 200*numel(conds) 600*numel(segments)];            
@@ -134,18 +134,18 @@ switch task
             trialcountFig = figure; trialcountFig.Position = [0 0 1080 100*numel(conds)]; 
             tiledlayout(trialcountFig,numel(conds),1,'TileSpacing','tight');  
 
-            for c = 1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},2)
+            for c = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},2)
                 figure(condcountFig); ax = nexttile; hold on;
-                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(mfilename).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
-                    'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(mfilename).condcount,3), 'UniformOutput', false));
-                for seg = 1:size(aap.report.(mfilename).condcount{lastSubjCondcount,sess},1)
-                    scatter(jitter(:,seg),cellfun(@(cc) cc(seg,c), aap.report.(mfilename).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
+                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
+                    'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(aap.tasklist.currenttask.name).condcount,3), 'UniformOutput', false));
+                for seg = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)
+                    scatter(jitter(:,seg),cellfun(@(cc) cc(seg,c), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
                 end
                 boxValPlot{c} = getappdata(getappdata(gca,'boxplothandle'),'boxvalplot');
                 title(ax,conds{c});
 
                 figure(trialcountFig); ax = nexttile;
-                tmp = cellfun(@(trl) full(trl{c}), aap.report.(mfilename).alltrials(~isTrialMissing,sess), 'UniformOutput', false);
+                tmp = cellfun(@(trl) full(trl{c}), aap.report.(aap.tasklist.currenttask.name).alltrials(~isTrialMissing,sess), 'UniformOutput', false);
                 maxNTrials = max(cellfun(@numel, tmp));
                 for su = 1:numel(tmp)
                     tmp{su}(end+1:maxNTrials) = false;
@@ -176,7 +176,7 @@ switch task
                 aap = aas_report_add(aap,'er',sprintf('<th>Outliers</th>'));
             end
             aap = aas_report_add(aap,'er','</tr>');
-            for seg = 1:size(aap.report.(mfilename).condcount{subj,sess},1)
+            for seg = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{subj,sess},1)
                 aap = aas_report_add(aap,'er','<tr>');
                 aap = aas_report_add(aap,'er',sprintf('<td>segment %d</td>',seg));
                 for c = 1:numel(conds) % for each condition
@@ -192,7 +192,7 @@ switch task
             aap = aas_report_add(aap,'er','</table>');
             aap = aas_report_add(aap,'er','</td>');
                         
-            if isempty(aap.report.(mfilename).summarysessions), aap = aas_report_add(aap,'er','</tr></table>'); end
+            if isempty(aap.report.(aap.tasklist.currenttask.name).summarysessions), aap = aas_report_add(aap,'er','</tr></table>'); end
 
     case 'doit'
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
@@ -303,7 +303,11 @@ switch task
                     try
                         epochEEG = pop_epoch(segEEG,{ev.eventvalue},(ev.eventwindow + ev.trlshift)/1000);
                     catch E
-                        if ~isempty(regexp(E.message,'dataset .* is empty','once'))
+                        if any(cellfun(@(msg) ~isempty(regexp(E.message,msg, 'once')),...
+                                {...
+                                'dataset .* is empty'...
+                                'empty epoch range'...
+                                }))
                             fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w'));
                             continue;
                         else
