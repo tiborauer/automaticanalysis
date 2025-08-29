@@ -300,7 +300,16 @@ switch task
                 pop_saveset(epochEEG,datafn{end});
             else
                 for ev = eventdef
-                    epochEEG = pop_epoch(segEEG,{ev.eventvalue},(ev.eventwindow + ev.trlshift)/1000);
+                    try
+                        epochEEG = pop_epoch(segEEG,{ev.eventvalue},(ev.eventwindow + ev.trlshift)/1000);
+                    catch E
+                        if ~isempty(regexp(E.message,'dataset .* is empty','once'))
+                            fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w'));
+                            continue;
+                        else
+                            rethrow(E);
+                        end
+                    end
 
                     % baseline correction
                     if ~isempty(ev.baselinewindow)
