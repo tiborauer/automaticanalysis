@@ -44,6 +44,9 @@ switch task
         end
         params = [params {'MaxMem' aap.options.aaparallel.memory*1000*0.75}]; % 75% of the available memory
         
+        if isfield(origEEG.etc,'clean_channel_mask') && (origEEG.nbchan ~= sum(origEEG.etc.clean_channel_mask)) % repeated task
+            origEEG.etc = rmfield(origEEG.etc,'clean_channel_mask');
+        end
         EEG = clean_artifacts(origEEG,params{:});
         
         if isfield(EEG.etc,'clean_channel_mask')
@@ -52,12 +55,13 @@ switch task
             keptData = mean(EEG.etc.clean_sample_mask);
         end
         
-        vis_artifacts(EEG,origEEG,'WindowLength',floor(EEG.pnts/EEG.srate));
-        set(gcf,'position',[0,0,1920 600]);
-        set(gcf,'PaperPositionMode','auto');
-        set(gcf,'Name',sprintf('%2.3f%% of the data kept',keptData*100))
-        print(gcf,'-noui',fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '.jpg']),'-djpeg','-r150');
-        close(gcf);
+        ho = vis_artifacts(EEG,origEEG,'WindowLength',floor(EEG.pnts/EEG.srate));
+        ax = ho(1).Parent;
+        set(ax.Parent,'position',[0,0,1920 600]);
+        set(ax.Parent,'PaperPositionMode','auto');
+        title(ax,ax.Title.String,sprintf('%2.3f%% of the data kept',keptData*100));
+        print(ax.Parent,'-noui',fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '.jpg']),'-djpeg','-r150');
+        close(ax.Parent);
         
         if isfield(EEG.etc,'clean_channel_mask') && ~strcmp(aas_getsetting(aap,'interpolate'), 'off')
             EEG = pop_interp(EEG, origEEG.chanlocs, aas_getsetting(aap,'interpolate'));

@@ -32,7 +32,7 @@
             </outputstreams>
 
             <diagnostics>
-                <freqrange desc='frequency range for display, specified as [minFreq maxFreq] in Hz'></freqrange>
+                <freqrange desc='frequency range for display, specified as Nx[minFreq maxFreq] in Hz'></freqrange>
             </diagnostics>
 
         </currenttask>

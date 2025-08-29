@@ -69,11 +69,14 @@ switch task
         
         % Plot components
         sfx = {'rejected' 'accepted'};
+        freqrange = aas_getsetting(aap,'diagnostics.freqrange');
         for ic = 1:size(EEG.icaweights,1)
-            f = pop_prop_extended(EEG, 0, ic, NaN, {'freqrange' aas_getsetting(aap,'diagnostics.freqrange')}, {}, 0, aas_getsetting(aap,'method'));
-            set(f,'PaperPositionMode','auto');
-            print(f,'-noui',fullfile(aas_getsesspath(aap,subj,sess),sprintf('diagnostic_%s_%s_IC%03d.jpg',mfilename,sfx{any(finalIcIdx==ic)+1},ic)),'-djpeg','-r300');
-            close(f);
+            for r = 1:size(freqrange,1)
+                f = pop_prop_extended(EEG, 0, ic, NaN, {'freqrange' freqrange(r,:)}, {}, 0, aas_getsetting(aap,'method'));
+                set(f,'PaperPositionMode','auto');
+                print(f,'-noui',fullfile(aas_getsesspath(aap,subj,sess),sprintf('diagnostic_%s_%s_IC%03d_%d.jpg',mfilename,sfx{any(finalIcIdx==ic)+1},ic,r)),'-djpeg','-r300');
+                close(f);
+            end
         end
         if numel(finalIcIdx) < size(EEG.icaweights,1), EEG = pop_subcomp(EEG, finalIcIdx, 0, 1); end
         if size(EEG.etc.ic_classification.ICLabel.classifications,1) == size(EEG.icaweights,2) % EEGLAB <2021.0 does not adjust etc
