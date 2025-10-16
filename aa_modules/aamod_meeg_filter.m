@@ -13,8 +13,8 @@ switch task
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
         
         %% Load toolboxes
-        [junk, FT] = aas_cache_get(aap,'fieldtrip');
-        [junk, EL] = aas_cache_get(aap,'eeglab');
+        [~, FT] = aas_cache_get(aap,'fieldtrip');
+        [~, EL] = aas_cache_get(aap,'eeglab');
 
         FT.load;
         
@@ -39,7 +39,6 @@ switch task
         if aas_getsetting(aap,'medianfilter'), cfg.medianfilter = 'yes'; end
 
         dat = ft_preprocessing(cfg);
-        events = ft_read_event(cfg.dataset);
         
         FT.unload;
         rmpath(fullfile(FT.toolPath,'external','eeglab'));
@@ -47,8 +46,9 @@ switch task
         %% Load into EEGLAB
         EL.load;
         
-        EEG = pop_fileio(dat.hdr, dat.trial{1}, events);
-                
+        EEG = pop_loadset(cfg.dataset);
+        EEG.data = dat.trial{1};
+        
         % diagnostics
         diagpath = fullfile(aas_getsesspath(aap,subj,sess),['diagnostic_' mfilename '_filtered.jpg']);
         meeg_diagnostics_continuous(EEG,aas_getsetting(aap,'diagnostics'),'Filtered',diagpath);
