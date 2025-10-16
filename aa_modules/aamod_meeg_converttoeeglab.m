@@ -12,7 +12,7 @@ switch task
     case 'doit'
         infname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg'));
         
-        [junk, EL] = aas_cache_get(aap,'eeglab');
+        [~, EL] = aas_cache_get(aap,'eeglab');
         EL.load;
         
         % read data
@@ -20,7 +20,7 @@ switch task
         for i = 1:numel(infname)
             try
                 EEG = pop_fileio(infname{i});
-                [res,o1,o2] = evalc('eeg_checkset(EEG)');
+                res = evalc('eeg_checkset(EEG)');
                 if isempty(res), break;
                 else, throw(res); end
             catch err
@@ -42,10 +42,10 @@ switch task
             EEG = pop_select(EEG, 'nochannel', cellfun(@(x) find(strcmp({EEG.chanlocs.labels}, x)), chns));
         end
         
-        % downsample
+        % downsample        
         if ~isempty(aas_getsetting(aap,'downsample',sess)) && ~isnan(aas_getsetting(aap,'downsample',sess))
             sRate = aas_getsetting(aap,'downsample',sess);
-            if sRate ~= EEG.srate, EEG = pop_resample( EEG, aas_getsetting(aap,'downsample',sess)); end
+            if sRate < EEG.srate, EEG = pop_resample( EEG, sRate); end
         end
         
         % edit
@@ -80,6 +80,11 @@ switch task
                     case 'keep'
                         EEG.event = EEG.event(ind);
                         EEG.urevent = EEG.urevent(ind);
+                    case 'keepbeforeevent'
+                        ind = find(ind);
+                        ind = ind(~strcmp({EEG.event(ind+1).type},op{2}));
+                        EEG.event(ind) = [];
+                        EEG.urevent(ind) = [];
                     case 'rename'
                         for i = find(ind)
                             EEG.event(i).type = op{2};
@@ -119,12 +124,17 @@ switch task
                         events = [events newE(i+1) EEG.event(loc(i+1):end)];
                         EEG.event = events;
                         EEG.urevent = rmfield(events,'urevent');
-                    case 'insertwithlatency'
+                    case {'insertwithlatency' 'insertwithtime'}
+                        latencies = str2num(op{2});
+                        if strcmp(op{1}, 'insertwithtime')
+                            % find the samples at latencies exact or just later
+                            latencies = arrayfun(@(lat) find(EEG.times - lat>=0, 1, 'first'), latencies);
+                        end
                         newE = struct(...
                             'type',e.type,...
-                            'duration',1,...
+                            'duration',EEG.srate/1000,...
                             'timestamp',[],...
-                            'latency',num2cell(str2num(op{2})),...
+                            'latency',num2cell(latencies),...
                             'urevent',0 ...
                             );
                         if ~isfield(EEG.event,'timestamp'), newE = rmfield(newE,'timestamp'); end

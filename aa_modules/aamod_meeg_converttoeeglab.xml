@@ -18,12 +18,14 @@
                 valid operations are
                     'remove' - remove
                     'keep' - remove all others
+                    'keepbeforeevent:<event>' - remove all not before <event>
                     'unique:first' - keep only first of consecutive events
                     'unique:last' - keep only last of consecutive events
                     'rename:<new type>' - rename event(s) to <new type>
                     'iterate' - add suffix to recurring event to indicate the number of occurrence
                     'insert:[<array of indices>] - insert event before the locations specified by <array of indices> with timings of the events at the locations'
                     'insertwithlatency:[<array of latencies>] - insert event with latencies'
+                    'insertwithtime:[<array of latencies>] - insert event with time'
                     'inserteachbetween:<start event>:<step in sec>:<end event>' - insert events at each <step in sec> between <start event> and <end event>
                     'ignorebefore' - remove heading data before the first occurence (excluding the event)
                     'ignoreafter' - remove trailig data after the last occurence (including the event)
