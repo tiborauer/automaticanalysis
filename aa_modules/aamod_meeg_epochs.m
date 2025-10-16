@@ -309,7 +309,7 @@ switch task
                                 'empty epoch range'...
                                 }))
                             fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w'));
-                            continue;
+                            return;
                         else
                             rethrow(E);
                         end
@@ -337,10 +337,10 @@ switch task
                             % find valid epochs
                             urSel = find(strcmp({epochEEG.urevent.type}, ev.eventvalue));
                             urLat = [epochEEG.urevent(urSel).latency];
-                            urWin = arrayfun(@(ul) ul+ev.eventwindow+ev.trlshift ,urLat ,'UniformOutput' ,false);
+                            urWin = arrayfun(@(ul) ul+round((ev.eventwindow+ev.trlshift)/1000*epochEEG.srate) ,urLat ,'UniformOutput' ,false);
                             urLat = [epochEEG.urevent(urSel(cellfun(@(uw) all(epochEEG.etc.clean_sample_mask(uw(1):uw(2))), urWin))).latency];
                             if numel(urLat) > epochEEG.trials
-                                aas_log(aap,false,'Excessive events');
+                                aas_log(aap,false,'Excessive events -> Select based on epochs');
                                 urInd = 0;
                                 for ep = 1:epochEEG.trials
                                     if isempty(epochEEG.epoch(ep).eventurevent)
