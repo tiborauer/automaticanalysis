@@ -82,6 +82,7 @@ switch task
                         EEG.urevent = EEG.urevent(ind);
                     case 'keepbeforeevent'
                         ind = find(ind);
+                        if ind(end) == numel(EEG.event), ind(end) = []; end
                         ind = ind(~strcmp({EEG.event(ind+1).type},op{2}));
                         EEG.event(ind) = [];
                         EEG.urevent(ind) = [];
