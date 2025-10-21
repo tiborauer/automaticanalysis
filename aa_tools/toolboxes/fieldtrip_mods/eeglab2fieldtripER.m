@@ -74,10 +74,12 @@ trlcfg                     = [];
 trlcfg.hdr                 = hdr;
 trlcfg.trialdef.eventtype  = 'trigger';
 trlcfg.trialdef.eventvalue = unique(data.trialinfo.type);
-trlcfg.trialdef.prestim    = -data.time{1}(1); % in seconds
+% - ensure each trial is included
+trlcfg.trialdef.prestim    = -data.time{1}(1)-1/data.fsample; % in seconds
 trlcfg.trialdef.poststim   = data.time{1}(end)+1/data.fsample; % in seconds
 trlcfg.event = events;
 trl = round(ft_trialfun_general(trlcfg));
+
 assert(numel(EEG.epoch)==size(data.trialinfo,1),'numel(EEG.epoch) size(data.trialinfo,1) do to match');
 if isnumeric(EEG.event(1).type)
     evcompfun = @eq;
@@ -88,7 +90,7 @@ indE = [];
 ureventinfo = zeros(0,3);
 evs = unique(data.trialinfo.type);
 for e = 1:numel(EEG.epoch)
-    if numel(EEG.epoch(e).event) == 1
+    if isscalar(EEG.epoch(e).event)
         evmatch = 1;
         if iscell(EEG.epoch(e).eventurevent)
             indUrE = EEG.epoch(e).eventurevent{evmatch};
@@ -116,7 +118,8 @@ for e = 1:numel(EEG.epoch)
     ureventinfo(e,:) = [evIndUnique evIndAll round(urevents(end).latency)/EEG.srate];
 end
 trl = trl(logical(indE),:);
-data = ft_redefinetrial(struct('trl',trl),data);
+data.trialinfo = trl(:,4);
+data = ft_checkdata(data, 'datatype', {'raw+comp', 'raw'}, 'feedback', 'yes');
 data.ureventinfo = array2table(ureventinfo,'VariableNames',{'eventnum' 'eventnum_all' 'latency'});
 
 if cfg.reorient
