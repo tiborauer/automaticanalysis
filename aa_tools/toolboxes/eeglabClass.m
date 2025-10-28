@@ -67,6 +67,7 @@ classdef eeglabClass < toolboxClass
                     plInf = obj.requiredPlugins(strcmp({obj.requiredPlugins.name},p.name));
                     if isfield(plInf,'version') && ~isempty(plInf.version)
                         if isnumeric(plInf.version), plInf.version = num2str(plInf.version); end
+                        plInf.version(plInf.version=='''') = [];
                         p.version = plInf.version;
                         p.zip = spm_file(p.zip,'basename',[p.name p.version]);
                         p.size = 1; % force install
