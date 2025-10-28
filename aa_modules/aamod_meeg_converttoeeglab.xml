@@ -27,6 +27,7 @@
                     'insertwithlatency:[<array of latencies>] - insert event with latencies'
                     'insertwithtime:[<array of latencies>] - insert event with time'
                     'inserteachbetween:<start event>:<step in sec>:<end event>' - insert events at each <step in sec> between <start event> and <end event>
+                    'prefixpattern:<pattern>:[<space-delimited list of prefixes>]' - prefix pattern matched in event name
                     'ignorebefore' - remove heading data before the first occurence (excluding the event)
                     'ignoreafter' - remove trailig data after the last occurence (including the event)
             -->

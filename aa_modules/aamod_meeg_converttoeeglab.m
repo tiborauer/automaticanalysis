@@ -82,10 +82,11 @@ switch task
                         EEG.urevent = EEG.urevent(ind);
                     case 'keepbeforeevent'
                         ind = find(ind);
-                        if ind(end) == numel(EEG.event), ind(end) = []; end
-                        ind = ind(~strcmp({EEG.event(ind+1).type},op{2}));
-                        EEG.event(ind) = [];
-                        EEG.urevent(ind) = [];
+                        indCrit = find(strcmp({EEG.event.type},op{2}));                        
+                        indKeep = arrayfun(@(l) find(ind<l, 1, 'last'), indCrit);
+                        indOmit = setdiff(1:numel(ind),indKeep);
+                        EEG.event(ind(indOmit)) = [];
+                        EEG.urevent(ind(indOmit)) = [];
                     case 'rename'
                         for i = find(ind)
                             EEG.event(i).type = op{2};
@@ -162,6 +163,14 @@ switch task
                         EEG.event = EEG.event(ord);                        
                         for i = 1:numel(EEG.event), EEG.event(i).urevent = i; end
                         EEG.urevent = rmfield(EEG.event,'urevent');
+                    case 'prefixpattern'
+                        pfx = strsplit(op{3}(2:end-1),' ');
+                        if sum(ind) ~= numel(pfx), aas_log(aap, true, sprintf('You need %d prefixes in a space-delimited list',sum(ind))); end
+                        ind = find(ind);
+                        for n = 1:numel(ind)
+                            EEG.event(ind(n)).type = regexprep(EEG.event(ind(n)).type,['(' op{2} ')'],[pfx{n} '$1']);
+                            EEG.urevent(EEG.event(ind(n)).urevent).type = EEG.event(ind(n)).type;
+                        end
                     case 'ignorebefore'
                         EEG = pop_select(EEG,'nopoint',[0 EEG.event(ind(1)).latency-1]);
                         beInd = find(strcmp({EEG.event.type},'boundary'),1,'first');
