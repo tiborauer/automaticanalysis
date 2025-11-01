@@ -87,12 +87,16 @@ classdef eeglabClass < toolboxClass
                 obj.(['postprocess_' p{1}])();
             end
             
-            % postprocess - add manopt for clean_rawdata
+            % postprocess - clean_rawdata: add manopt for 
             [~,~,pl] = plugin_status('clean_rawdata');
             plPath = fullfile(obj.toolPath,'plugins',pl.foldername);
             if exist(fullfile(plPath,'manopt'),'dir')
                 addpath(genpath(fullfile(plPath,'manopt')))
             end
+
+            % postprocess - dipfit: add headmodel dirs
+            addpath(fullfile(obj.dipfitPath,'standard_BEM'))
+            addpath(fullfile(obj.dipfitPath,'standard_BESA'))
 
             load@toolboxClass(obj,keepWorkspace)
         end
