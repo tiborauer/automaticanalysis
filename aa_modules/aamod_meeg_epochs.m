@@ -308,15 +308,13 @@ switch task
                                 'dataset .* is empty'...
                                 'empty epoch range'...
                                 }))
-                            fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w'));
-                            return;
+                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w');
+                            fprintf(fid,ev.eventvalue);
+                            fclose(fid);
+                            continue;
                         else
                             rethrow(E);
                         end
-                    end
-                    if isempty(epochEEG.epoch)
-                        fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w'));
-                        return;
                     end
 
                     % baseline correction
@@ -335,18 +333,56 @@ switch task
 
                     % Inster event-of-interest outside eventwindow as event with 0 latency
                     if aas_getsetting(aap,'ensurefieldtripcompatibility')
-                        missingEp = arrayfun(@(ep) isempty(ep.eventtype) || ~any(strcmp(cellstr(ep.eventtype), ev.eventvalue)), epochEEG.epoch);
+                        if isempty(epochEEG.epoch)
+                            missingEp = true(1,size(epochEEG.data,3));
+                        else
+                            missingEp = arrayfun(@(ep) isempty(ep.eventtype) || ~any(strcmp(cellstr(ep.eventtype), ev.eventvalue)), epochEEG.epoch);
+                        end
                         if any(missingEp)
                             % - insert marking event into the middle of the trial
                             mEEG = segEEG;
-                            deltaLat = (ev.trlshift + mean(ev.eventwindow)/2)/1000*mEEG.srate;
-                            for evInsert = mEEG.event(find(strcmp({mEEG.event.type},ev.eventvalue)))
+                            deltaLat = (ev.trlshift + mean(ev.eventwindow))/1000*mEEG.srate;
+                            for evInsert = mEEG.urevent(find(strcmp({mEEG.urevent.type},ev.eventvalue)))
                                 evInsert.type = ['m' ev.eventvalue];
-                                evInsert.latency = evInsert.latency + deltaLat;
+                                evInsert.urevent = find([mEEG.urevent.latency]==(evInsert.latency));
+                                evInsert.latency = evInsert.latency + deltaLat; % shift to the middle of the epoch
+                                evInsert.latency = evInsert.latency - sum(~mEEG.etc.clean_sample_mask(1:round(evInsert.latency))); % adjust for cleaning before the event
                                 mEEG.event(end+1) = evInsert;
                             end
                             mEEG = eeg_checkset(mEEG, 'eventconsistency');
                             mEEG = pop_epoch(mEEG,{ev.eventvalue},(ev.eventwindow + ev.trlshift)/1000);
+
+                            if sum(strcmp({mEEG.event.type},['m' ev.eventvalue])) < epochEEG.trials
+                                % - try imputing missing events (only if one between to existing ones)
+                                for ep = setdiff(1:mEEG.trials,[mEEG.event(strcmp({mEEG.event.type},['m' ev.eventvalue])).epoch])
+                                    evPre = mEEG.event(strcmp({mEEG.event.type},['m' ev.eventvalue]) & [mEEG.event.epoch]==(ep-1));
+                                    evPost = mEEG.event(strcmp({mEEG.event.type},['m' ev.eventvalue]) & [mEEG.event.epoch]==(ep+1));
+                                    if isempty(evPost)
+                                        aas_log(aap,true,'Cannot find consecutive event.');
+                                    end
+                                    selEvIns = strcmp({mEEG.urevent(evPre.urevent+1:evPost.urevent-1).type},ev.eventvalue);
+                                    if sum(selEvIns) < 1, aas_log(aap,true,'No urevent');
+                                    elseif sum(selEvIns) > 1
+                                        selClean = mEEG.etc.clean_sample_mask(round([mEEG.urevent(evPre.urevent+find(selEvIns)).latency]));
+                                        if sum(selClean) < 1, aas_log(aap,true,'No clean urevent');
+                                        else % find the event with the most clean period
+                                            alat = 1;
+                                            while sum(selClean) > 1
+                                                alat = alat + 1;
+                                                selClean = arrayfun(@(lat) all(mEEG.etc.clean_sample_mask(lat-alat:lat+alat)), [mEEG.urevent(evPre.urevent+find(selEvIns)).latency]);
+                                            end
+                                            indEvIns = find(selEvIns);
+                                            selEvIns(indEvIns(~selClean)) = false;
+                                        end
+                                    end
+                                    evInsert = evPre;
+                                    evInsert.epoch = ep;
+                                    evInsert.urevent = evPre.urevent+find(selEvIns);
+                                    evInsert.latency = evPre.latency + mEEG.pnts;
+                                    mEEG.event(end+1) = evInsert;
+                                    mEEG = eeg_checkset(mEEG, 'eventconsistency');
+                                end
+                            end
                             urLat = [mEEG.urevent([mEEG.event(strcmp({mEEG.event.type},['m' ev.eventvalue])).urevent]).latency];
                             if numel(urLat) ~= epochEEG.trials
                                 aas_log(aap,true,'Event mismatch - you should never see this');
@@ -367,11 +403,15 @@ switch task
                                 'urevent', num2cell(reshape(urInd,size(urLat))),...
                                 'epoch', num2cell(1:epochEEG.trials)...
                                 );
-                            evInsert = rmfield(evInsert,setdiff(fieldnames(evInsert),fieldnames(epochEEG.event)));
-                            [~, ~, sortInd] = intersect({'epoch' 'latency'},fieldnames(evInsert));
-                            epochEEG.event = table2struct(sortrows(struct2table([evInsert epochEEG.event]),sortInd))';
+                            if isempty(epochEEG.event)
+                                epochEEG.event = evInsert;
+                            else
+                                evInsert = rmfield(evInsert,setdiff(fieldnames(evInsert),fieldnames(epochEEG.event)));
+                                [~, ~, sortInd] = intersect({'epoch' 'latency'},fieldnames(evInsert));
+                                epochEEG.event = table2struct(sortrows(struct2table([evInsert epochEEG.event]),sortInd))';
+                            end
 
-                            % update epochs
+                            % update epochs (? epochEEG = eeg_checkset(epochEEG, 'eventconsistency');)
                             for ep = 1:epochEEG.trials
                                 indE = find([epochEEG.event.epoch] == ep);
                                 if isscalar(indE)
@@ -383,8 +423,12 @@ switch task
                                         'eventlatency',0,...
                                         'eventurevent',epochEEG.event(indE).urevent...
                                         );
-                                    epInsert = rmfield(epInsert,setdiff(fieldnames(epInsert),fieldnames(epochEEG.epoch)));
-                                    epochEEG.epoch(ep) = epInsert;
+                                    if isempty(epochEEG.epoch)
+                                        epochEEG.epoch = epInsert;
+                                    else
+                                        epInsert = rmfield(epInsert,setdiff(fieldnames(epInsert),fieldnames(epochEEG.epoch)));
+                                        epochEEG.epoch(ep) = epInsert;
+                                    end
                                 else
                                     epochEEG.epoch(ep).event = indE;
                                     epochEEG.epoch(ep).eventtype= {epochEEG.event(indE).type};
@@ -408,7 +452,7 @@ switch task
                     condfn = sprintf('%s-%d',ev.conditionlabel,get_eventvalue(ev.eventvalue));
                     datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.fdt',condfn,seg));
                     datafn{end+1} = fullfile(aas_getsesspath(aap,subj,sess),sprintf('epochs_%s_seg-%d.set',condfn,seg));                    
-                    pop_saveset(epochEEG,datafn{end});                    
+                    pop_saveset(epochEEG,datafn{end});
                 end
                 
                 % event matching
@@ -421,8 +465,14 @@ switch task
                     
                     % data
                     alleeg = cellfun(@(t) pop_loadset(eminfname{contains(eminfname, t)}), em{1});
+                    if numel(alleeg) ~= numel(em{1})
+                        fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'w');
+                        fprintf(fid,strjoin(em{1},' + '));
+                        fclose(fid);
+                        continue;
+                    end                    
                 
-                    if numel(alleeg) ~= numel(eventvalues), aas_log(aap,true,'All EEGs are expected to have a single condition'); end
+                    if numel(alleeg) ~= numel(eventvalues), aas_log(aap,false,'All EEGs are expected to have a single condition'); end
                     
                     for indeeg = 1:numel(alleeg)
                         % events
@@ -444,9 +494,12 @@ switch task
                                 end
                             end
                         end
-                        if isempty(selEv)
-                            fclose(fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'w'));
-                            return;                            
+                        if isempty(selEv) ||...
+                                any([alleeg.trials] == 1) % treated as continuous data by EEGLAB, which removes epochs
+                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'w');
+                            fprintf(fid,strjoin(em{1},' + '));
+                            fclose(fid);
+                            continue;                            
                         end
 
                         % - select event matched with all other EEGs

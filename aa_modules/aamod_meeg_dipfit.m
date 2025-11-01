@@ -58,7 +58,7 @@ switch task
         
         % symmetrically constrained bilateral dipoles
         if aas_getsetting(aap,'constrainSymmetrical'), EEG = fitTwoDipoles(EEG, 'LRR', 35); end
-        
+
         % plot dipoles
         pop_dipplot( EEG, 1:numel(EEG.dipfit.model) ,'mri',mri,'normlen','on','view',[-1,-1,1],'gui','off');
         set(gcf,'PaperPositionMode','auto');
