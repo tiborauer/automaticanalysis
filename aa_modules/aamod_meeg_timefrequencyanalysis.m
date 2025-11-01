@@ -97,7 +97,7 @@ switch task
                         aas_log(aap,true,'Unsupported file format')
                 end
                 % - select only data with event-of-interest
-                meegfn = meegfn(cellfun(@(f) any(cellfun(@(e) contains(f,e),m.event.names)), meegfn));
+                meegfn = meegfn(cellfun(@(f) any(cellfun(@(e) contains(f,e),spm_file(m.event.names,'prefix','epochs_'))), meegfn));
                 for seg = 1:numel(meegfn)
                     switch filetype
                         case 'fieldtrip'
@@ -151,10 +151,12 @@ switch task
                         aas_log(aap,false,'WARNING: original eventinfo (ureventinfo) is not available -> ignorebefore and ignoreafter will be ignored')
                     end
                 end
+                if ~exist('data','var'), continue; end
                 data(cellfun(@isempty, {data.trial})) = []; % remove skipped segments
+                if isempty(data), continue; end
                 
                 % process events
-                kvs = unique(regexp(spm_file(meegfn,'basename'),'[A-Z]+-[0-9]+','match','once'));
+                kvs = unique(regexp(spm_file(meegfn,'basename'),'[A-Z0-9]+-[0-9]+','match','once'));
                 events = cellfun(@(x) strsplit(x,'-'), kvs,'UniformOutput',false);
                 conEventsFreq = cell(1,numel(m.event.names));
                 conEventsBand = cell(1,numel(m.event.names));
