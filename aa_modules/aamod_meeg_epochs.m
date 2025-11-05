@@ -466,8 +466,8 @@ switch task
                     % data
                     alleeg = cellfun(@(t) pop_loadset(eminfname{contains(eminfname, t)}), em{1});
                     if numel(alleeg) ~= numel(em{1})
-                        fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'w');
-                        fprintf(fid,strjoin(em{1},' + '));
+                        fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'a');
+                        fprintf(fid,'%s\n',strjoin(em{1},' + '));
                         fclose(fid);
                         continue;
                     end                    
@@ -494,12 +494,13 @@ switch task
                                 end
                             end
                         end
-                        if isempty(selEv) ||...
-                                any([alleeg.trials] == 1) % treated as continuous data by EEGLAB, which removes epochs
-                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'w');
-                            fprintf(fid,strjoin(em{1},' + '));
+                        isemptymatch = isempty(selEv) ||...
+                                any([alleeg.trials] == 1); % treated as continuous data by EEGLAB, which removes epochs
+                        if isemptymatch
+                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'emptymatch'),'a');
+                            fprintf(fid,'%s\n',strjoin(em{1},' + '));
                             fclose(fid);
-                            continue;                            
+                            break;                            
                         end
 
                         % - select event matched with all other EEGs
@@ -541,6 +542,7 @@ switch task
                             alleeg(indeeg).epoch(indEp) = rmfield(currEp,setdiff(fieldnames(currEp),fieldnames(alleeg(indeeg).epoch)));
                         end
                     end
+                    if isemptymatch, continue; end
                 
                     % save EEGs;
                     for eeg = alleeg
