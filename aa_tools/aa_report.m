@@ -128,7 +128,7 @@ for k = stageindices
         % Last subject (for each session)
         if inSession
             depcombind = prod(depind,2);
-            lastDep = arrayfun(@(s) [depind(depcombind==max(depcombind(depind(:,2)==s)),1) s], unique(depind(:,2)), 'UniformOutput', false);
+            lastDep = arrayfun(@(s) [depind(find(depcombind==max(depcombind(depind(:,2)==s)),1,'last'),1) s], unique(depind(:,2)), 'UniformOutput', false);
         elseif ~isempty(depind)
             lastDep = {depind(end)};
         end
