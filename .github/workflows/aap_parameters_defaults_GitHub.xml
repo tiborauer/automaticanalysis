@@ -42,6 +42,7 @@
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>clean_rawdata</name>
+                        <version>'2.10'</version>
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>AMICA</name>
