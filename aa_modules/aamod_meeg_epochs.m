@@ -12,7 +12,8 @@ switch task
         outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
         segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);        
         conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');
-        condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);
+        condname = cellfun(@(x) regexp(x,'[a-zA-Z0-9]+(?=-)','match','once'), conds, 'UniformOutput', false);
+        condnum = cellfun(@(x) str2double(regexp(x,'(?<=-)[0-9]+','match')), conds);        
         
         % init summary
         % - first session
@@ -28,7 +29,7 @@ switch task
             case 'unloaded', EL.reload;
         end
         for c = 1:numel(conds)
-            subjtrials{c} = logical(sparse(numel(segments),MAXNTRIAL));
+            subjtrials.(condname{c}) = logical(sparse(numel(segments),MAXNTRIAL));
             for s = segments   
                 segoutfname = outfname(endsWith(spm_file(outfname,'basename'),sprintf('seg-%d',s)));
                 if numel(segoutfname) ~= numel(conds), aas_log(aap,true,'All segments MUST have all conditions'); end
@@ -42,9 +43,9 @@ switch task
                 utrials = cellfun(@get_eventvalue, {eeg.urevent.type})';
                 indtrials = cumsum(utrials == condnum(c));
 
-                subjtrials{c}(s,indtrials([trials.urevent])) = true;                
+                subjtrials.(condname{c})(s,indtrials([trials.urevent])) = true;                
             end
-            subjtrials{c}(:,max(indtrials)+1:end) = [];
+            subjtrials.(condname{c})(:,max(indtrials)+1:end) = [];
         end
         EL.unload;
 
@@ -57,13 +58,13 @@ switch task
             for c = 1:numel(conds)
                 ax = nexttile;
                 hold on
-                arrayfun(@(s) plot(find(subjtrials{c}(s,:)),-s,'b*','MarkerSize',7), 1:numel(segments))
+                arrayfun(@(s) plot(find(subjtrials.(condname{c})(s,:)),-s,'b*','MarkerSize',7), 1:numel(segments))
                 hold off
                 ylim([-max(segments+0.5),-0.5]); yticks(-max(segments):-1);
                 if c == 1, yticklabels(arrayfun(@(x) sprintf('segment %d',x),max(segments):-1:1,'UniformOutput',false)); 
                 else, yticklabels({});
                 end
-                xlim([0 size(subjtrials{c},2)]);
+                xlim([0 size(subjtrials.(condname{c}),2)]);
                 title(ax, conds{c});
             end            
             print(f,'-djpeg','-r300',fn);
@@ -73,6 +74,10 @@ switch task
         aap.report.(aap.tasklist.currenttask.name).alltrials{subj,sess} = subjtrials;
         
         % table
+        condcount = table(...
+            'Size',[numel(segments) numel(fieldnames(subjtrials))],...
+            'VariableNames',fieldnames(subjtrials),...
+            'VariableTypes',repmat({'single'},1,numel(fieldnames(subjtrials))));
         aap = aas_report_add(aap,subj,'<table id="data"><tr>');
         aap = aas_report_add(aap,subj,'<th>Segment</th>');
         for c = 1:numel(conds)
@@ -82,27 +87,25 @@ switch task
         for s = segments
             aap = aas_report_add(aap,subj,'<tr>');
             aap = aas_report_add(aap,subj,sprintf('<td>segment %d</td>',s));
-            for c = 1:numel(conds)
-                condcount(s,c) = nnz(subjtrials{c}(s,:));
-                aap = aas_report_add(aap,subj,sprintf('<td>%d</td>',condcount(s,c)));
+            for cond = fieldnames(subjtrials)'
+                condcount.(cond{1})(s) = nnz(subjtrials.(cond{1})(s,:));
+                aap = aas_report_add(aap,subj,sprintf('<td>%d</td>',condcount.(cond{1})(s)));
+                if condcount.(cond{1})(s) == 0, condcount.(cond{1})(s) = NaN; end
             end
             aap = aas_report_add(aap,subj,'</tr>');
         end
         aap = aas_report_add(aap,subj,'</table>');
-        condcount(condcount==0) = NaN; % zero epoch should be the ones omitted
         aap.report.(aap.tasklist.currenttask.name).condcount{subj,sess} = condcount;
                
     case 'summary'        
             % missing data
-            isTrialMissing = cellfun(@isempty, aap.report.(aap.tasklist.currenttask.name).alltrials(:,sess));
-            isCondcountMissing = cellfun(@(cc) isempty(cc) || (isscalar(cc) && isnan(cc)), aap.report.(aap.tasklist.currenttask.name).condcount(:,sess));
-            lastSubjCondcount = find(~isCondcountMissing,1,'last');
+            isSubjMissing = cellfun(@isempty, aap.report.(aap.tasklist.currenttask.name).alltrials(:,sess));
+            maxCondNum = max(cellfun(@(cc) size(cc,2), aap.report.(aap.tasklist.currenttask.name).condcount(:,sess)));
+            lastSubjCondcount = find(cellfun(@(cc) size(cc,2)==maxCondNum, aap.report.(aap.tasklist.currenttask.name).condcount(:,sess)),1,'last');
 
             % update conditions and sessions based on the last subject with no missing data
-            outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[lastSubjCondcount sess],'meeg','output'));
-            outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
-            segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);
-            conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');            
+            segments = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1);
+            conds = aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess}.Properties.VariableNames;
             
             if ~isfield(aap.report.(aap.tasklist.currenttask.name),'summarysessions')                                
                 [~, aap.report.(aap.tasklist.currenttask.name).summarysessions] = aas_getN_bydomain(aap,aap.tasklist.currenttask.domain,lastSubjCondcount);
@@ -119,12 +122,12 @@ switch task
             aap = aas_report_add(aap,'er',['<h3>Session: ' aap.acq_details.meeg_sessions(sess).name '</h3>']);
             
             % Boxplot for each condition
-            jitter = 0.1; % jitter around position
+            jitter = 0.1; % jitter around position (for every possible)
             jitter = (...
-                1+(rand([sum(~isCondcountMissing),size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)])-0.5) .* ...
-                repmat(jitter*2./[1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1)...
+                1+(rand([numel(isSubjMissing),numel(segments)])-0.5) .* ...
+                repmat(jitter*2./segments,numel(isSubjMissing),1)...
                 ) .* ...
-                repmat([1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)],sum(~isCondcountMissing),1);
+                repmat(segments,numel(isSubjMissing),1);
 
             condcountFn = fullfile(aas_getstudypath(aap),['diagnostic_' mfilename '_' aap.acq_details.meeg_sessions(sess).name '_conditioncount.jpg']);
             condcountFig = figure; condcountFig.Position = [0 0 200*numel(conds) 600*numel(segments)];            
@@ -134,18 +137,19 @@ switch task
             trialcountFig = figure; trialcountFig.Position = [0 0 1080 100*numel(conds)]; 
             tiledlayout(trialcountFig,numel(conds),1,'TileSpacing','tight');  
 
-            for c = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},2)
+            for c = 1:numel(conds)
+                isCondcountMissing = cellfun(@(cc) isempty(cc) || ~any(strcmp(conds{c},cc.Properties.VariableNames)), aap.report.(aap.tasklist.currenttask.name).condcount(:,sess));
                 figure(condcountFig); ax = nexttile; hold on;
-                boxplot(cell2mat(cellfun(@(cc) cc(:,c), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
+                boxplot(cell2mat(cellfun(@(cc) cc.(conds{c})(:), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
                     'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(aap.tasklist.currenttask.name).condcount,3), 'UniformOutput', false));
-                for seg = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{lastSubjCondcount,sess},1)
-                    scatter(jitter(:,seg),cellfun(@(cc) cc(seg,c), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
+                for seg = segments
+                    scatter(jitter(~isCondcountMissing,seg),cellfun(@(cc) cc.(conds{c})(seg), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
                 end
                 boxValPlot{c} = getappdata(getappdata(gca,'boxplothandle'),'boxvalplot');
                 title(ax,conds{c});
 
                 figure(trialcountFig); ax = nexttile;
-                tmp = cellfun(@(trl) full(trl{c}), aap.report.(aap.tasklist.currenttask.name).alltrials(~isTrialMissing,sess), 'UniformOutput', false);
+                tmp = cellfun(@(trl) full(trl.(conds{c})), aap.report.(aap.tasklist.currenttask.name).alltrials(~isCondcountMissing,sess), 'UniformOutput', false);
                 maxNTrials = max(cellfun(@numel, tmp));
                 for su = 1:numel(tmp)
                     tmp{su}(end+1:maxNTrials) = false;
@@ -176,7 +180,7 @@ switch task
                 aap = aas_report_add(aap,'er',sprintf('<th>Outliers</th>'));
             end
             aap = aas_report_add(aap,'er','</tr>');
-            for seg = 1:size(aap.report.(aap.tasklist.currenttask.name).condcount{subj,sess},1)
+            for seg = segments
                 aap = aas_report_add(aap,'er','<tr>');
                 aap = aas_report_add(aap,'er',sprintf('<td>segment %d</td>',seg));
                 for c = 1:numel(conds) % for each condition
@@ -338,7 +342,7 @@ switch task
                         else
                             missingEp = arrayfun(@(ep) isempty(ep.eventtype) || ~any(strcmp(cellstr(ep.eventtype), ev.eventvalue)), epochEEG.epoch);
                         end
-                        if any(missingEp)
+                        if size(epochEEG.data,3) > 1 && any(missingEp)
                             % - insert marking event into the middle of the trial
                             mEEG = segEEG;
                             deltaLat = (ev.trlshift + mean(ev.eventwindow))/1000*mEEG.srate;
