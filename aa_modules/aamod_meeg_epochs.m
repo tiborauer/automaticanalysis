@@ -141,7 +141,7 @@ switch task
                 isCondcountMissing = cellfun(@(cc) isempty(cc) || ~any(strcmp(conds{c},cc.Properties.VariableNames)), aap.report.(aap.tasklist.currenttask.name).condcount(:,sess));
                 figure(condcountFig); ax = nexttile; hold on;
                 boxplot(cell2mat(cellfun(@(cc) cc.(conds{c})(:), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess), 'UniformOutput', false)')',...
-                    'label',arrayfun(@(x) sprintf('Segment %d',x), 1:size(aap.report.(aap.tasklist.currenttask.name).condcount,3), 'UniformOutput', false));
+                    'label',arrayfun(@(x) sprintf('Segment %d',x), segments, 'UniformOutput', false));
                 for seg = segments
                     scatter(jitter(~isCondcountMissing,seg),cellfun(@(cc) cc.(conds{c})(seg), aap.report.(aap.tasklist.currenttask.name).condcount(~isCondcountMissing,sess)),'k','filled','MarkerFaceAlpha',0.4);
                 end
@@ -154,7 +154,7 @@ switch task
                 for su = 1:numel(tmp)
                     tmp{su}(end+1:maxNTrials) = false;
                 end
-                trl = sum(squeeze(shiftdim(cat(3,tmp{:}),2)));
+                trl = squeeze(sum(squeeze(shiftdim(cat(3,tmp{:}),2))));
                 minTRL = min(trl(:));
                 im = image(trl-minTRL+1);
                 im.Parent.FontSize = 12;
