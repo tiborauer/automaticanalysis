@@ -15,7 +15,10 @@ elseif isprop(Task,'StartTime')
 else
     aas_log(obj.aap,true,'Time-related property of Task class not found!')
 end
-if isempty(finishTime), finishTime = datetime('now','TimeZone',startTime.TimeZone); end
+if isempty(finishTime)
+    finishTime = datetime('now');
+    if isprop(startTime,'TimeZone') && ~isempty(startTime.TimeZone), finishTime.TimeZone = startTime.TimeZone; end
+end
 
 try
     elapsed = DisplayHelper.getRunningDuration(finishTime-startTime);
