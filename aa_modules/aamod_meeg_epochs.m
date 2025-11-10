@@ -312,7 +312,7 @@ switch task
                                 'dataset .* is empty'...
                                 'empty epoch range'...
                                 }))
-                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'w');
+                            fid = fopen(fullfile(aas_getsesspath(aap,subj,sess),'empty'),'a');
                             fprintf(fid,ev.eventvalue);
                             fclose(fid);
                             continue;
