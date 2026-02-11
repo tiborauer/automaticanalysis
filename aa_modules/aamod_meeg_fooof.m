@@ -18,6 +18,10 @@ switch task
             aas_getsetting(aap,'frequencyrange'), ...
             aas_getsetting(aap,'aperiodicmode'));
         
+        bndcfg = [];
+        bndcfg.parameter = {'powspctrm' 'crsspctrm'};
+        bndcfg.bandspec = aas_getsetting(aap,'bandspecification');
+
         % Run fooof
         for fnTF = cellstr(aas_getfiles_bystream(aap,'subject',subj,'timefreq'))'
             [~, w] = aas_shell([condasetup ';python ' py_script ' ' py_args ' '  fnTF{1} ' ' spm_file(fnTF{1},'prefix','fooof_','ext','')]);
@@ -40,22 +44,25 @@ switch task
             peaks = load(spm_file(fnTF{1},'prefix','fooof_','suffix','_peaks','ext',''));
             fooof = keepfields(timefreq,{'label' 'elec'});
             fooof.dimord = 'chan_band';
-            fooof.bandspec = aas_getsetting(aap,'bandspec');
-            fooof.band = fieldnames(fooof.bandspec);
+            fooof.bandspec = bndcfg.bandspec;
+            fooof.band = bndcfg.bandspec.band;
             fooof.r2 = cellfun(@(ch) r2.(ch), fooof.label);
             fooof.peakfreq = cell(0,0);
             fooof.peakbandwidth = cell(0,0);
-            fooof.peakpower = cell(0,0);
+            fooof.peakpow = cell(0,0);
             for b = 1:numel(fooof.band)
                 for ch = 1:numel(fooof.label)
-                    sel1 = find(peaks.(fooof.label{ch})(:,1)>=fooof.bandspec.(fooof.band{b})(1), 1, 'first');
-                    sel2 = find(peaks.(fooof.label{ch})(:,1)<fooof.bandspec.(fooof.band{b})(2), 1, 'last');
+                    sel1 = find(peaks.(fooof.label{ch})(:,1)>=fooof.bandspec.bandbound{b}(1), 1, 'first');
+                    sel2 = find(peaks.(fooof.label{ch})(:,1)<fooof.bandspec.bandbound{b}(2), 1, 'last');
                     fooof.peakfreq(ch,b) = {peaks.(fooof.label{ch})(sel1:sel2,1)};
                     fooof.peakbandwidth(ch,b) = {peaks.(fooof.label{ch})(sel1:sel2,3)};
-                    fooof.peakpower(ch,b) = {peaks.(fooof.label{ch})(sel1:sel2,2)};
+                    fooof.peakpow(ch,b) = {peaks.(fooof.label{ch})(sel1:sel2,2)};
                 end
             end
             save(spm_file(fnTF{1},'prefix','fooof_','suffix','_peaks','ext',''),'fooof');
+
+            % - timeband
+            % timeband = ft_average_bands(bndcfg,fooof,timefreq);
         end
 
         aas_desc_outputs(aap,'subject',subj,'aperiodic',spm_select('FPList',aas_getsubjpath(aap,subj),'^fooof_.*_aperiodic.mat$'));

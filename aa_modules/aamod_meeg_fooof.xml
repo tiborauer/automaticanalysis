@@ -9,12 +9,12 @@
             </qsub>
 
             <frequencyrange desc='Frequency range specified as [1x2]; specify "all" for the complete data'>all</frequencyrange>
-            <bandspec desc='band specification; subfields MUST be subset of ["delta" "theta" "alpha" "beta" "low gamma" "high gamma"]'>
-                <alpha desc='lower (inclusive) and upper (exclusive) frequency bounds specified as [1x2]'>8 13.5</alpha>
-                <beta desc='lower (inclusive) and upper (exclusive) frequency bounds specified as [1x2]'>13.5 32</beta>
-            </bandspec>    
+            <bandspecification desc='averaging frequency estimate according to the bands adjusted based on FOOOF estimates'>
+                <band desc='band names, [1xN] cell of strings'></band>
+                <bandbound desc='band boundaries [1xN] cell of [1x2] double arrays in Hz'></bandbound>
+            </bandspecification>
             <aperiodicmode desc='approach to take for fitting the aperiodic component' options='fixed|knee' ui='optionlist'>fixed</aperiodicmode>
-            
+
             <inputstreams>
                 <stream>timefreq</stream>
             </inputstreams>
@@ -22,6 +22,7 @@
             <outputstreams>
                 <stream>aperiodic</stream>
                 <stream>peaks</stream>
+                <stream isessential='0' isrenameable='1'>timeband</stream>
             </outputstreams>
 
             </currenttask>
