@@ -103,7 +103,7 @@ catch
 end
 
 if exist('oldspmdefaults', 'var')
-    aap.spm.defaults = setstructfields(aap.spm.defaults, oldspmdefaults);
+    aap.spm.defaults = struct_update(aap.spm.defaults, oldspmdefaults);
 end
 aap.aap_beforeuserchanges.spm.defaults = aap.spm.defaults;
 
