@@ -24,7 +24,7 @@
             </criteria>
             
             <inputstreams>
-                <stream>meeg</stream>                
+                <stream ismodified='0'>meeg</stream>                
             </inputstreams>
 
             <outputstreams>

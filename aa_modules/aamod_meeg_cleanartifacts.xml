@@ -26,7 +26,7 @@
             <interpolate desc='interpolate removed channels' options='off|invdist|spherical|spacetime'>off</interpolate>
             
             <inputstreams>
-                <stream>meeg</stream>                
+                <stream ismodified='0'>meeg</stream>                
             </inputstreams>
 
             <outputstreams>

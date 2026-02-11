@@ -19,7 +19,7 @@
             <medianfilter desc='jump preserving median filter'>0</medianfilter>
                         
             <inputstreams>
-                <stream>meeg</stream>                
+                <stream ismodified='0'>meeg</stream>                
             </inputstreams>
 
             <outputstreams>

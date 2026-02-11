@@ -11,7 +11,7 @@
             <reference desc='reference channel' options='average|[list of channel indices]|channel label|channel labels as colon seperated list>'></reference>
             
             <inputstreams>
-                <stream>meeg</stream>                
+                <stream ismodified='0'>meeg</stream>                
             </inputstreams>
 
             <outputstreams>

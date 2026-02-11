@@ -42,7 +42,7 @@
             
             <inputstreams>
                 <stream>channellayout</stream>
-                <stream>meeg</stream>                
+                <stream ismodified='0'>meeg</stream>                
             </inputstreams>
             
             <outputstreams>
