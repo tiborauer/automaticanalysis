@@ -23,11 +23,11 @@
             <matlabtoolsdir desc="Path(s) to MATLAB tools (colon separated list)" ui="dir"></matlabtoolsdir>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>spm</name>
-                <dir ui='dir'>/home/akk/tools/spm12</dir>
+                <dir ui='dir'>/projects/eeg/tools/spm12</dir>
             </toolbox>
                         <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>eeglab</name>
-                <dir ui='dir'>/home/akk/tools/eeglab</dir>
+                <dir ui='dir'>/projects/eeg/tools/eeglab</dir>
                 <extraparameters>
                     <requiredPlugins>
                         <name>EEG-BIDS</name>
@@ -40,6 +40,7 @@
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>clean_rawdata</name>
+                        <version>'2.10'</version>
                     </requiredPlugins>
                     <requiredPlugins>
                         <name>AMICA</name>
@@ -67,29 +68,29 @@
             </toolbox>         
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>fieldtrip</name>
-                <dir ui='dir'>/home/akk/tools/fieldtrip</dir>
+                <dir ui='dir'>/projects/eeg/tools/fieldtrip</dir>
             </toolbox>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>fooof</name>
-                <dir ui='dir'>/home/akk/tools/miniconda/envs/fooof</dir>
+                <dir ui='dir'>/projects/tools/lmod-prod/modules/fooof/1.1.1/fooof_1.1.1</dir>
             </toolbox>
             <toolbox desc='Toolbox with implemented interface in extrafunctions/toolboxes' ui='custom'>
                 <name desc='Name corresponding to the name of the interface without the "Class" suffix' ui='text'>hcpwb</name>
-                <dir ui='dir'>/home/akk/tools/HCP-workbench</dir>
+                <dir ui='dir'>/projects/eeg/tools/HCP-workbench</dir>
                 <extraparameters>
-                    <templateDir>/home/akk/tools/HCP-workbench/templates</templateDir>
+                    <templateDir>/projects/eeg/tools/HCP-workbench/templates</templateDir>
                 </extraparameters>
             </toolbox>
             <linuxshell desc='Linux shell used to run linux commands' ui='text'>bash</linuxshell>
-            <fsldir desc='Path to fsl' ui='dir'>/home/akk/tools/fsl</fsldir>
-            <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'>/home/akk/tools/config/fsl_bash</fslsetup>
+            <fsldir desc='Path to fsl' ui='dir'>/projects/tools/lmod-prod/modules/fsl/6.0.7.17</fsldir>
+            <fslsetup desc='Path to fsl setup script, executing before any fsl command' ui='text'>module load fsl</fslsetup>
             <fslshell desc='Shell used to run FSL' ui='text'>bash</fslshell>
             <fsloutputtype desc='Output type used by FSL' ui='text'>NIFTI</fsloutputtype>
-            <freesurferdir desc='Path to freesurfer' ui='dir'>/home/akk/tools/freesurfer</freesurferdir>        
+            <freesurferdir desc='Path to freesurfer' ui='dir'>/projects/tools/lmod-prod/modules/freesurfer/7.4.1</freesurferdir>        
             <freesurfershell desc='Shell used to run FreeSurfer' ui='text'>bash</freesurfershell>
             <freesurfersetup desc='Path to FreeSurfer setup script, executing before any FreeSurfer command' ui='text'></freesurfersetup>
-            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>/home/akk/tools/freesurfer/FreeSurferEnv.sh;</freesurferenvironment>
-			<condasetup desc="Path to conda setup script, executing before any Python command, see help runPyCommand" ui="text">/home/akk/tools/config/conda_bash.sh</condasetup>            
+            <freesurferenvironment desc='Path to FreeSurfer environmental setup script, executing before any FreeSurfer command' ui='text'>module load freesurfer;</freesurferenvironment>
+			<condasetup desc="Path to conda setup script, executing before any Python command, see help runPyCommand" ui="text">module load miniforge</condasetup>            
             <allowremotecache desc='Allow local caching of files from remote server' ui='optionlist'>1</allowremotecache>
             <poolprofile desc='Cluster Profile and (optional) initial submit argument (e.g. asking for specific queue or resource) separated with colon' ui='text'>Processes</poolprofile>
             <mailerserver desc='E-mail address and password (colon-sepertated) for the mailer account for sending notifications' ui='text'>aamailer.akk@gmail.com:aamailer@89</mailerserver>
