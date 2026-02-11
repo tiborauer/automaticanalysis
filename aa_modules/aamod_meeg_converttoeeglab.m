@@ -67,7 +67,11 @@ switch task
         if ~isempty(toEdit)
             for e = toEdit
                 if ischar(e.type)
-                    ind = ~cellfun(@isempty, regexp({EEG.event.type},e.type));
+                    try, ind = ~cellfun(@isempty, regexp({EEG.event.type},e.type)); 
+                    catch
+                        aas_log(aap,false,sprintf('No trial %s found', e.type));
+                        ind = false(size(EEG.event));
+                    end
                 elseif isnumeric(e.type)
                     ind = e.type;
                 end
@@ -172,7 +176,7 @@ switch task
                             EEG.urevent(EEG.event(ind(n)).urevent).type = EEG.event(ind(n)).type;
                         end
                     case 'ignorebefore'
-                        EEG = pop_select(EEG,'nopoint',[0 EEG.event(ind(1)).latency-1]);
+                        EEG = pop_select(EEG,'nopoint',[0 EEG.event(find(ind,1,'first')).latency-1]);
                         beInd = find(strcmp({EEG.event.type},'boundary'),1,'first');
                         samplecorr = EEG.event(beInd).duration;
                         EEG.event(beInd) = [];
@@ -189,11 +193,9 @@ switch task
                             EEG.urevent(i).latency = EEG.urevent(i).latency - samplecorr;
                         end
                     case 'ignoreafter'
-                        EEG = pop_select(EEG,'nopoint',[EEG.event(ind(end)).latency EEG.pnts]);
-                        ureindcorr = EEG.event(end).urevent;
-                        
-                        % adjust events
-                        EEG.urevent(ureindcorr+1:end) = [];
+                        EEG = pop_select(EEG,'nopoint',[EEG.event(find(ind,1,'last')).latency+1 EEG.pnts]);
+                        beInd = find(strcmp({EEG.event.type},'boundary'),1,'last');
+                        EEG.event(beInd) = [];                       
                     otherwise
                         aas_log(aap,false,sprintf('Operation %s not yet implemented',op{1}));
                 end
