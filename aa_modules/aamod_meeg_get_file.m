@@ -38,10 +38,18 @@ switch task
         sessdir = aas_getsesspath(aap,subj,sess);
         
         switch spm_file(meegser,'ext')
-            case 'fif' % MEG Neuromag
+            case {'fif'} % MEG Neuromag,
                 copyfile(meegfile,fullfile(sessdir,meegser),'f'); % DP changed to force file overwrite
             case 'vhdr' % EEG BrainVision
                 baseFn = spm_file(meegser,'basename');
+                meegser = {};
+                for f = cellstr(spm_select('FPList',srcdir,['^' baseFn '.*']))'
+                    meegser{end+1} = spm_file(f{1},'filename');
+                    copyfile(f{1},fullfile(sessdir,meegser{end}),'f'); % DP changed to force file overwrite
+                end
+            case 'edf' % EDF (BIDS)
+                baseFn = spm_file(meegser,'basename');
+                if endsWith(baseFn,'eeg'), baseFn = regexprep(baseFn, '_eeg$',''); end
                 meegser = {};
                 for f = cellstr(spm_select('FPList',srcdir,['^' baseFn '.*']))'
                     meegser{end+1} = spm_file(f{1},'filename');
