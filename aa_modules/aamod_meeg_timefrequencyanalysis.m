@@ -94,7 +94,11 @@ switch task
                         filetype = 'eeglab';
                         meegfn = meegfn(strcmp(spm_file(meegfn,'ext'),'set'));
                     otherwise
-                        aas_log(aap,true,'Unsupported file format')
+                        if isempty(spm_file(meegfn{1},'ext'))
+                            continue;
+                        else
+                            aas_log(aap,true,'Unsupported file format')
+                        end
                 end
                 % - select only data with event-of-interest
                 meegfn = meegfn(cellfun(@(f) any(cellfun(@(e) contains(f,e),spm_file(m.event.names,'prefix','epochs_'))), meegfn));
