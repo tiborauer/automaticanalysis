@@ -12,7 +12,10 @@ switch task
 
         % - save pnts
         outFn = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj,sess],'meeg','output'));        
+        [~, EL] = aas_cache_get(aap,'eeglab');
+        EL.load;
         EEG = pop_loadset(outFn{strcmp(spm_file(outFn,'ext'),'set')});
+        EL.unload;
         aap.report.(aap.tasklist.currenttask.name).pnts(subj,sess) = EEG.pnts;
 
         % figures
