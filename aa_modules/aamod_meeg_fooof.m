@@ -12,7 +12,7 @@ switch task
         % Config fooof
         [~, FOOOF] = aas_cache_get(aap,'fooof');
         FOOOF.load;
-        condasetup = ['source ' aap.directory_conventions.condasetup '; conda activate ' FOOOF.condaEnvironment];
+        condasetup = [aap.directory_conventions.condasetup '; conda activate ' FOOOF.condaEnvironment];
         py_script = which(FOOOF.script);
         py_args = sprintf('--freq_range %1.3f %1.3f --aperiodic_mode %s', ...
             aas_getsetting(aap,'frequencyrange'), ...

@@ -4,7 +4,6 @@ function [s, w]=aas_runfslcommand(aap,fslcmd,ENV)
 fslsetup=deblank(aap.directory_conventions.fslsetup);
 if not(isempty(fslsetup))
     if not(fslsetup(end)==';'), fslsetup=[fslsetup ';']; end
-    fslsetup = ['source ' fslsetup];
 end
 
 if nargin < 3, ENV = {}; end
