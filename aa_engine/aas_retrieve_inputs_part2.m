@@ -21,7 +21,7 @@ while any(depnotdone)
     for depind=1:nstreams
         if isempty(streamfiles(depind).outputstreamdesc)
             depnotdone(depind)=false;
-        end;
+        end
         if depnotdone(depind)
             if (~streamfiles(depind).reloadfiles)
                 aas_log(aap,false,sprintf(' retrieve stream %s [checksum match, not recopied] from %s to %s',streamfiles(depind).streamname,streamfiles(depind).src,streamfiles(depind).dest),aap.gui_controls.colours.inputstreams);
@@ -38,14 +38,14 @@ while any(depnotdone)
                         fid_check=fopen(streamfiles(depind).outputstreamdesc,'r');
                         line=fgetl(fid_check);
                         fclose(fid_check);
-                end;
+                end
 
                 % If not archived
                 if strcmp(line(1:11),'ARCHIVED TO')
                     if ~archivemessage(depind)
                         aas_log(aap,false,sprintf(' stream %s is archived, awaiting retrieval',streamfiles(depind).streamname),aap.gui_controls.colours.inputstreams);
                         archivemessage(depind)=true;
-                    end;
+                    end
                 else
                     % Retrieve remote or local stream?
                     switch streamfiles(depind).streamlocation
@@ -60,19 +60,18 @@ while any(depnotdone)
                             oldpth='';
                             % rsync in chunks. It will then compress.
                             chunksize=64;
-                            transfernow=false;
                             numtotransfer=0;
                             inps='';
                             use_remotesymlinks = ~streamfiles(depind).ismodified && (aap.options.remotesymlinks == 1);
                             for ind=1:length(streamfiles(depind).fns)
                                 % Copy file
-                                [pth,nme,ext]=fileparts(streamfiles(depind).fns_dest_full{ind});
+                                pth =fileparts(streamfiles(depind).fns_dest_full{ind});
                                 newpth=pth;
                                 if (~strcmp(oldpth,newpth))
                                     aas_makedir(aap,newpth);
                                     if (numtotransfer>0)
                                         aas_copyfromremote(aap, streamfiles(depind).inputstream.host, inps,oldpth,'verbose',aap.options.remotecpverbose,'allowcache',streamfiles(depind).inputstream.allowcache,'allowremotesymlinks',use_remotesymlinks);
-                                    end;
+                                    end
                                     inps=[fullfile(streamfiles(depind).src,streamfiles(depind).fns{ind}) ' '];
                                     oldpth=newpth;
                                     numtotransfer=1;
@@ -83,7 +82,7 @@ while any(depnotdone)
                                         inps=[fullfile(streamfiles(depind).src,streamfiles(depind).fns{ind}) ' '];
                                     end                                    
                                     numtotransfer=numtotransfer+1;
-                                end;
+                                end
                                 if (streamfiles(depind).wasnamechange)
                                     aas_copyfromremote(aap, streamfiles(depind).inputstream.host, fullfile(streamfiles(depind).src,streamfiles(depind).fns{ind}),streamfiles(depind).fns_dest_full{ind},'verbose',aap.options.remotecpverbose,'allowcache',streamfiles(depind).inputstream.allowcache,'allowremotesymlinks',use_remotesymlinks);
                                     numtotransfer=0;
@@ -98,9 +97,9 @@ while any(depnotdone)
                                         aas_copyfromremote(aap, streamfiles(depind).inputstream.host, inps,oldpth,'verbose',aap.options.remotecpverbose,'allowcache',streamfiles(depind).inputstream.allowcache,'allowremotesymlinks',use_remotesymlinks);
                                         numtotransfer=0;
                                         inps='';
-                                    end;
-                                end;
-                            end;
+                                    end
+                                end
+                            end
 
                             % Get read to write the stream file
                             [aap,datecheck_md5_recalc]=aas_md5(aap,streamfiles(depind).fns_dest_full,[],'filestats');
@@ -108,18 +107,18 @@ while any(depnotdone)
                                 try
                                     delete(streamfiles(depind).inputstreamdesc);
                                 catch
-                                end;
-                            end;
+                                end
+                            end
                             fid_inp=fopen(streamfiles(depind).inputstreamdesc,'w');
                             fprintf(fid_inp,'MD5\t%s\t%s\n',streamfiles(depind).md5,datecheck_md5_recalc);
 
                             for ind=1:length(streamfiles(depind).fns)
                                 % Write to stream file
                                 fprintf(fid_inp,'%s\n',streamfiles(depind).fns_dest{ind});
-                            end;
+                            end
                             if isempty(streamfiles(depind).fns)
                                 aas_log(aap,false,sprintf('No inputs in stream %s',streamname));
-                            end;
+                            end
                             fclose(fid_inp);
                             depnotdone(depind)=false;
 
@@ -134,13 +133,13 @@ while any(depnotdone)
                             fprintf(fid_inp,'MD5\t%s\t%s\n',streamfiles(depind).md5,streamfiles(depind).datecheck_md5_recalc);
                             for ind=1:length(streamfiles(depind).fns_dest_full)
                                 % Copy file
-                                [pth nme ext]=fileparts(streamfiles(depind).fns_dest_full{ind});
+                                pth = fileparts(streamfiles(depind).fns_dest_full{ind});
                                 newpth=pth;
                                 if (~strcmp(oldpth,newpth))
                                     aas_makedir(aap,newpth);
                                     %relativepath_src_from_dest=relativepath(src,newpth);
                                     oldpth=newpth;
-                                end;
+                                end
                                 if ispc()
                                     src_full = fullfile(streamfiles(depind).src, streamfiles(depind).fns{ind});
                                     if (streamfiles(depind).ismodified) || (~aap.options.hardlinks && ~aap.options.symlinks)
@@ -171,17 +170,18 @@ while any(depnotdone)
                                         cmd=['ln -f ' fullfile(streamfiles(depind).src,streamfiles(depind).fns{ind}) ' ' streamfiles(depind).fns_dest_full{ind}];
                                     elseif aap.options.symlinks
                                         % This is a symlink
+                                        if exist(streamfiles(depind).fns_dest_full{ind},'file'), delete(streamfiles(depind).fns_dest_full{ind}); end
                                         cmd=['ln -s ' fullfile(streamfiles(depind).src,streamfiles(depind).fns{ind}) ' ' streamfiles(depind).fns_dest_full{ind}];
                                     end
                                     aas_shell(cmd);
                                 end
                                 % Write to stream file
                                 fprintf(fid_inp,'%s\n',streamfiles(depind).fns_dest{ind});
-                            end;
+                            end
 
 
                             % Alert archiving system to new data if it is at work here
-                            [spth snme sext]=fileparts(streamfiles(depind).inputstreamdesc);
+                            [~, snme]=fileparts(streamfiles(depind).inputstreamdesc);
                             dotpath=fullfile(streamfiles(depind).dest,['.' snme]);
 
                             if exist(dotpath,'dir')
@@ -189,7 +189,7 @@ while any(depnotdone)
                                 lclfid=fopen(localchangelog,'a');
                                 fprintf(lclfid,'%s\tSTREAM REWRITTEN BY aa\n',datestr(now,'yyyy-mm-ddTHH:MM:SS.FFF'));
                                 fclose(lclfid);
-                            end;
+                            end
 
                             %                             % Bring across archiving if present, adjusting
                             %                             % as necessary to ensure duplicate (hard
@@ -222,15 +222,15 @@ while any(depnotdone)
 
                             if isempty(streamfiles(depind).fns)
                                 aas_log(aap,false,sprintf('No inputs in stream %s',streamfiles(depind).streamname));
-                            end;
+                            end
                             fclose(fid_inp);
 
                             depnotdone(depind)=false;
-                    end;
-                end;
-            end;
-        end;
-    end;
+                    end
+                end
+            end
+        end
+    end
 
     % Wait a moment to avoid overloading the filesystem
     pause(1.0);
