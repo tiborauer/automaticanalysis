@@ -9,6 +9,7 @@ switch task
         MAXNTRIAL = 1000; % do not expect more than 1000 trials
         
         outfname = cellstr(aas_getfiles_bystream(aap,'meeg_session',[subj sess],'meeg','output'));
+        if isempty(outfname{1}), return; end
         outfname = outfname(strcmp(spm_file(outfname,'ext'),'set'));
         segments = reshape(str2double(unique(regexp(spm_file(outfname,'basename'),'(?<=seg-)[0-9]+','match','once'))),1,[]);        
         conds = regexp(spm_file(outfname(endsWith(spm_file(outfname,'basename'),'seg-1')),'basename'),'(?<=_)[A-Z-0-9]+','match','once');
