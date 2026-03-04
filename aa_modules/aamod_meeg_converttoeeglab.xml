@@ -26,7 +26,7 @@
                     'iterate' - add suffix to recurring event to indicate the number of occurrence
                     'insert:[<array of indices>] - insert event before the locations specified by <array of indices> with timings of the events at the locations'
                     'insertwithlatency:[<array of latencies>] - insert event with latencies; "end" puts it at the last timepoint'
-                    'insertwithtime:[<array of latencies>] - insert event with time; "end" puts it at the last timepoint'
+                    'insertwithtime:[<array of latencies>] - insert event with time in ms; "end" puts it at the last timepoint; negative number indicates maximum position (in can the measurement os shorter)'
                     'inserteachbetween:<start event>:<step in sec>:<end event>' - insert events at each <step in sec> between <start event> and <end event>
                     'prefixpattern:<pattern>:[<space-delimited list of prefixes>]' - prefix pattern matched in event name
                     'ignorebefore' - remove heading data before the first occurence (excluding the event)
