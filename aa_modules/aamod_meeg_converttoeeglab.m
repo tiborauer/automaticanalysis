@@ -161,12 +161,16 @@ switch task
                                     latencies = EEG.pnts;
                             end
                         else
-                            if strcmp(op{1}, 'insertwithtime')
-                                % find the samples at latencies exact or just later
-                                tmplatencies = arrayfun(@(lat) find(EEG.times - lat>=0, 1, 'first'), abs(latencies), 'UniformOutput', false);
-                               indLatOob = find(cellfun(@isempty, tmplatencies),1,'first');
-                               if ~isempty(indLatOob) && (latencies(indLatOob)<0), tmplatencies{indLatOob} = EEG.pnts; end
-                               latencies = cell2mat(tmplatencies);
+                            switch op{1}
+                                case 'insertwithtime'
+                                    % find the samples at latencies exact or just later
+                                    tmplatencies = arrayfun(@(lat) find(EEG.times - lat>=0, 1, 'first'), abs(latencies), 'UniformOutput', false);
+                                    selLatOob = cellfun(@isempty, tmplatencies);
+                                    if any(selLatOob), tmplatencies(selLatOob & (latencies<0))= {EEG.pnts}; end
+                                    latencies = cell2mat(tmplatencies);
+                                case 'insertwithlatency'                                     
+                                    selLatOob = abs(latencies)>EEG.pnts;
+                                    if any(selLatOob), latencies(selLatOob & (latencies<0)) = EEG.pnts; end                                
                             end
                         end
                         newE = struct(...
