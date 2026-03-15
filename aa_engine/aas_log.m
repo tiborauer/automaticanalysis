@@ -94,7 +94,9 @@ else
     if isdeployed || ~usejava('desktop') || ~exist('cprintf','file')
         fprintf(msg);
     else
-        cprintf(style,msg);
+        try cprintf(style,msg);
+        catch, fprintf(msg);
+        end
     end
 end
 % and to worker file?
