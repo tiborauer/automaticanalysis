@@ -485,6 +485,7 @@ switch task
                         evur = [alleeg(indeeg).event(strcmp({alleeg(indeeg).event.type}, eventvalues{indeeg})).urevent];
                         urevur = find(strcmp({alleeg(indeeg).urevent.type},eventvalues{indeeg}));
                         for otherind = setdiff(1:numel(alleeg),indeeg)
+                            if isempty(alleeg(otherind).event), break; end
                             othereegeventsel = strcmp({alleeg(otherind).event.type},eventvalues{otherind});
                             othereegur = [alleeg(otherind).event(othereegeventsel).urevent];
                             for ur = othereegur
