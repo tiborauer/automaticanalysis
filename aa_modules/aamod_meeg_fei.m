@@ -46,15 +46,15 @@ switch task
         if ~all(isnan(expDFA))
             dfa = data;
             dfa.expdfa = expDFA;
-            save(spm_file(infname{indfnEEG},'prefix','dfa_'),'dfa');
-            aas_desc_outputs(aap,'meeg_session',[subj sess],'dfa',spm_file(infname{indfnEEG},'prefix','dfa_'));
+            save(spm_file(infname{indfnEEG},'prefix','dfa_','ext','mat'),'dfa');
+            aas_desc_outputs(aap,'meeg_session',[subj sess],'dfa',spm_file(infname{indfnEEG},'prefix','dfa_','ext','mat'));
         end
 
         % fei
         fei = data;
         fei.fei = fEI;
-        save(spm_file(infname{indfnEEG},'prefix','fei_'),'fei');
-        aas_desc_outputs(aap,'meeg_session',[subj sess],'fei',spm_file(infname{indfnEEG},'prefix','fei_'));
+        save(spm_file(infname{indfnEEG},'prefix','fei_','ext','mat'),'fei');
+        aas_desc_outputs(aap,'meeg_session',[subj sess],'fei',spm_file(infname{indfnEEG},'prefix','fei_','ext','mat'));
 
     case 'checkrequirements'
         if ~aas_cache_get(aap,'eeglab'), aas_log(aap,true,'EEGLAB is not found'); end
