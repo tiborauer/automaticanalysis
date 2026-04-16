@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aap>
+    <tasklist>
+        <currenttask domain='meeg_session' desc='Measurement of excitation-inhibition ratio' modality='MEEG'>
+            
+            <qsub>
+                <timeBase>0.15</timeBase>
+                <memoryBase>0.5</memoryBase>
+            </qsub>
+            
+            <dfa desc='DFA calculation parameters. If any if not specified, DFA is not calculated'>
+                <windowsize desc='Array of calculation window size in seconds, [1xN]'></windowsize>
+                <windowoverlap desc='Fraction of overlap between calculation windows'></windowoverlap>
+            </dfa>
+            <fei>
+                <windowsize desc='Size of calculation window in seconds'></windowsize>
+                <windowoverlap desc='Fraction of overlap between calculation windows'></windowoverlap>
+            </fei>
+            
+            <inputstreams>
+                <stream ismodified='0'>meeg</stream>                
+            </inputstreams>
+
+            <outputstreams>
+                <stream>dfa</stream>
+                <stream>fei</stream>
+            </outputstreams>
+            
+        </currenttask>
+    </tasklist>
+</aap>
