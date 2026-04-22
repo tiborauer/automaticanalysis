@@ -4,13 +4,28 @@ resp='';
 
 switch task
     case 'report'
+        SFX = {'accepted','rejected'};
+
+        % init summary
+        % - first session
+        if ~isfield(aap.report, aap.tasklist.currenttask.name)
+            for indSfx = 1:numel(SFX)
+                aap.report.(aap.tasklist.currenttask.name).(SFX{indSfx}) = NaN(aas_getN_bydomain(aap,'subject'),numel(aap.acq_details.meeg_sessions));
+            end
+        end
+
         for fnames = cellstr(spm_select('FPList',aas_getsesspath(aap,subj,sess),['^diagnostic_' mfilename '_[0-9]*.jpg$']))'
             aap = aas_report_addimage(aap,subj,fnames{1});
         end
-        aap = aas_report_add(aap,subj,'<table><tr><th>Accepted</th><th>Rejected</th></tr><tr>');
-        for sfx = {'accepted','rejected'}
+        nIC = cellfun(@(sfx) size(spm_select('FPList',aas_getsesspath(aap,subj,sess),['^diagnostic_.*' sfx '.*jpg$']),1)/2, SFX);
+        aap = aas_report_add(aap,subj,sprintf('<th>%c%s: %d</th>',...
+            upper(SFX{1}(1)), SFX{1}(2:end), nIC(1),...
+            upper(SFX{2}(1)), SFX{2}(2:end), nIC(2)...
+            ));
+        for indSfx = 1:numel(SFX)
+            aap.report.(aap.tasklist.currenttask.name).(SFX{indSfx})(subj,sess) = nIC(indSfx);
             aap = aas_report_add(aap,subj,'<td valign="top">');
-            for fn = cellstr(spm_select('FPList',aas_getsesspath(aap,subj,sess),['^diagnostic_.*' sfx{1} '.*jpg$']))'
+            for fn = cellstr(spm_select('FPList',aas_getsesspath(aap,subj,sess),['^diagnostic_.*' SFX{indSfx} '.*jpg$']))'
                 if ~isempty(fn{1}), aap=aas_report_addimage(aap,subj,fn{1}); end
             end
             aap = aas_report_add(aap,subj,'</td>');
